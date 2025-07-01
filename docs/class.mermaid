@@ -1,0 +1,30 @@
+classDiagram
+    class HeartbeatMonitor {
+        - timeout_threshold: int
+        - last_heartbeat: datetime
+        - heartbeat_socket: socket
+        + start_monitoring(cmd: str): void
+        + receive_heartbeat(): void
+        + check_timeout(): bool
+        + restart_process(cmd: str): void
+    }
+
+    class ProcessManager {
+        - worker_cmd: str
+        - worker_process: Process
+        + start_process(cmd: str): Process
+        + restart_process(cmd: str): Process
+        + terminate_process(proc: Process): void
+    }
+
+    class ObstacleDetector {
+        - heartbeat_interval: int
+        + runDetection_loop(): void
+        + send_heartbeat(): void
+        + simulate_failure(): void
+    }
+
+    HeartbeatMonitor ..> ProcessManager : uses
+    ProcessManager --> ObstacleDetector : manages
+    ObstacleDetector --> HeartbeatMonitor : sendHeartbeat
+    
