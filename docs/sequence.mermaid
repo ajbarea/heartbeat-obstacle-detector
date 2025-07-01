@@ -1,0 +1,45 @@
+sequenceDiagram
+    participant M as HeartbeatMonitor
+    participant P as ProcessManager
+    participant W as ObstacleDetector
+
+    Note over M,P: Initialization
+    activate M
+    M->>P: start_process("detector.py")
+    activate P
+    P->>W: launch
+    activate W
+    W-->>P: acknowledgment
+    deactivate W
+    P-->>M: started successfully
+    deactivate P
+    deactivate M
+
+    loop Every 50 ms
+        activate W
+        W->>M: send_heartbeat()
+        deactivate W
+        Note right of M: record timestamp locally
+    end
+
+    alt Crash
+        activate W
+        W->>W: simulate_failure()
+        deactivate W
+        Note right of W: no more heartbeats
+    end
+
+    alt Timeout (> 500 ms)
+        activate M
+        M->>M: check_timeout()
+        Note right of M: timeout detected
+        M->>P: restart_process("detector.py")
+        activate P
+        P->>W: launch
+        activate W
+        W-->>P: acknowledgment
+        deactivate W
+        P-->>M: restarted successfully
+        deactivate P
+        deactivate M
+    end
