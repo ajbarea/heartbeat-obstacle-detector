@@ -15,13 +15,17 @@ classDiagram
         + start_process(cmd: str): Process
         + restart_process(cmd: str): Process
         + terminate_process(proc: Process): void
+        + is_process_running(): bool
     }
 
     class ObstacleDetector {
         - heartbeat_interval: int
-        + runDetection_loop(): void
+        - heartbeat_socket: socket
+        - monitor_address: tuple
+        + run_detection_loop(): void
         + send_heartbeat(): void
         + simulate_failure(): void
+        + detect_obstacles(): void
     }
 
     HeartbeatMonitor ..> ProcessManager : uses

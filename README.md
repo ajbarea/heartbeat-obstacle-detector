@@ -1,36 +1,38 @@
-# Heartbeat Obstacle Detector
+# 🚗💓 Heartbeat Obstacle Detector
 
 A proof-of-concept implementation of the **Heartbeat** architectural tactic for fault detection and recovery, applied to an obstacle detection module in a self-driving car case study.
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
-* [Overview](#overview)
-* [Architecture](#architecture)
-* [Components](#components)
-* [Prerequisites](#prerequisites)
-* [Installation](#installation)
-* [Usage](#usage)
-* [Project Structure](#project-structure)
+* [📖 Overview](#-overview)
+* [🏗️ Architecture](#️-architecture)
+* [🔧 Components](#-components)
+* [📋 Prerequisites](#-prerequisites)
+* [🚀 Installation](#-installation)
+* [💻 Usage](#-usage)
+* [📁 Project Structure](#-project-structure)
 
 ---
 
-## Overview
+## 📖 Overview
 
-This repository contains two Python scripts:
+This repository contains three Python scripts:
 
-1. **detector.py**: Simulates an obstacle detection module that periodically sends heartbeat messages and randomly fails to mimic real-world crashes.
-2. **monitor.py**: Listens for heartbeat messages from `detector.py` and restarts the detector if heartbeats stop.
+1. **🔍 src/detector.py**: Simulates an obstacle detection module that periodically sends heartbeat messages and randomly fails to mimic real-world crashes.
+2. **👁️ src/monitor.py**: Listens for heartbeat messages from `detector.py` and coordinates fault detection and recovery.
+3. **⚙️ src/process_manager.py**: Handles launching, monitoring, and restarting the detector process as part of the heartbeat fault detection system.
 
 The purpose is to demonstrate how the Heartbeat tactic can detect faults and recover a critical sensing process in a distributed system.
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
-* **Worker Process (`detector.py`)**: Sends a timestamped "alive" signal over UDP at regular intervals. Includes dummy obstacle distance outputs and random failure injection.
-* **Monitor Process (`monitor.py`)**: Receives heartbeats, tracks timing, logs failures, and respawns the worker process via Python's `subprocess` module.
+* **🔍 Worker Process (`detector.py`)**: Sends a timestamped "alive" signal over UDP at regular intervals. Includes dummy obstacle distance outputs and random failure injection.
+* **👁️ Monitor Process (`monitor.py`)**: Receives heartbeats, tracks timing, logs failures, and coordinates fault detection and recovery.
+* **⚙️ Process Manager (`process_manager.py`)**: Handles launching, monitoring, and restarting the detector process as part of the heartbeat fault detection system.
 
 ---
 
@@ -56,13 +58,17 @@ classDiagram
         + start_process(cmd: str): Process
         + restart_process(cmd: str): Process
         + terminate_process(proc: Process): void
+        + is_process_running(): bool
     }
 
     class ObstacleDetector {
         - heartbeat_interval: int
-        + runDetection_loop(): void
+        - heartbeat_socket: socket
+        - monitor_address: tuple
+        + run_detection_loop(): void
         + send_heartbeat(): void
         + simulate_failure(): void
+        + detect_obstacles(): void
     }
 
     HeartbeatMonitor ..> ProcessManager : uses
@@ -84,7 +90,7 @@ sequenceDiagram
 
     Note over M,P: Initialization
     activate M
-    M->>P: start_process("detector.py")
+    M->>P: start_process("src/detector.py")
     activate P
     P->>W: launch
     activate W
@@ -112,7 +118,7 @@ sequenceDiagram
         activate M
         M->>M: check_timeout()
         Note right of M: timeout detected
-        M->>P: restart_process("detector.py")
+        M->>P: restart_process("src/detector.py")
         activate P
         P->>W: launch
         activate W
@@ -126,24 +132,59 @@ sequenceDiagram
 
 ---
 
-## Components
+## Architecture Strengths
 
-* `detector.py`
-* `monitor.py`
-* `requirements.txt`
-* `README.md`
-* `docs/` (UML diagrams)
+This heartbeat-based fault detection system provides several key advantages:
+
+**🔄 Automatic Recovery**: Detects process failures within 500ms and automatically restarts the obstacle detection module without manual intervention.
+
+**🏗️ Modular Design**: Clean separation between monitoring, process management, and detection logic enables independent testing and maintenance.
+
+**📡 Lightweight Communication**: UDP-based heartbeats minimize network overhead while providing timely fault detection.
+
+**🛡️ Fault Isolation**: Process crashes are contained and don't affect the monitoring system, ensuring continuous supervision.
+
+**⚡ Real-time Response**: 50ms heartbeat interval provides rapid fault detection suitable for safety-critical automotive applications.
 
 ---
 
-## Prerequisites
+## UDP Communication Benefits
 
-* Python 3.8 or newer
-* (Optional) Virtual environment tool such as `venv` or `virtualenv`
+The system uses **UDP (User Datagram Protocol)** for heartbeat transmission, which offers specific advantages for fault detection:
+
+**🚀 Low Latency**: No connection setup overhead enables sub-millisecond heartbeat transmission for real-time fault detection.
+
+**📦 Minimal Overhead**: Lightweight protocol reduces network bandwidth usage and system resource consumption.
+
+**🔥 Fire-and-Forget**: Heartbeats are sent without waiting for acknowledgments, preventing blocking in the detection loop.
+
+**🎯 Perfect for Heartbeats**: Occasional packet loss is acceptable since the next heartbeat arrives within 50ms.
+
+**🌐 Simple Implementation**: Straightforward socket programming without complex connection management or state tracking.
 
 ---
 
-## Installation
+## 🔧 Components
+
+* 🔍 `src/detector.py`
+* 👁️ `src/monitor.py`
+* ⚙️ `src/process_manager.py`
+* 📦 `pyproject.toml`
+* 📦 `requirements.txt`
+* 📖 `README.md`
+* 📁 `docs/` (Mermaid diagrams and documentation)
+* 📁 `tests/` (Test files)
+
+---
+
+## 📋 Prerequisites
+
+* 🐍 Python 3.8 or newer
+* 📦 (Optional) Virtual environment tool such as `venv` or `virtualenv`
+
+---
+
+## 🚀 Installation
 
 1. Clone the repository:
 
@@ -152,43 +193,45 @@ sequenceDiagram
    cd heartbeat-obstacle-detector
    ```
 
-2. (Optional) Create and activate a virtual environment:
+2. Create and activate a virtual environment:
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # Linux/macOS
-   venv\Scripts\activate     # Windows
+   python -m venv .venv
+   source .venv/Scripts/activate  # Bash
+   python -m pip install --upgrade pip
+   pip install -e ".[dev]"
    ```
 
-3. Install dependencies:
+## 💻 Usage
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Note**: This is currently a proof-of-concept with skeleton implementation. The core functionality is not yet complete.
 
----
+1. Once implemented, start the monitor process (it will spawn the detector):
 
-## Usage
+    ```bash
+    python src/monitor.py
+    ```
 
-1. Start the monitor process (it will spawn the detector):
+2. The monitor will automatically launch the detector process and begin monitoring for heartbeats.
 
-   ```bash
-   python monitor.py
-   ```
+3. Observe logs for heartbeat reception and any detector restarts (when fully implemented).
 
-2. Observe logs for heartbeat reception and any detector restarts.
-
----
-
-## Project Structure
+## 📁 Project Structure
 
 ```text
 heartbeat-obstacle-detector/
-├── detector.py
-├── monitor.py
+├── src/
+│   ├── detector.py
+│   ├── monitor.py
+│   └── process_manager.py
+├── tests/
+│   └── .gitkeep
+├── docs/
+│   ├── class.mermaid
+│   ├── sequence.mermaid
+│   └── Fault-Detection Using Heartbeat Tactic.pdf
+├── pyproject.toml
 ├── requirements.txt
 ├── README.md
-└── docs/
-    ├── class-diagram.png
-    └── sequence-diagram.png
+└── .gitignore
 ```
