@@ -136,13 +136,6 @@ sequenceDiagram
 
 ---
 
-## Prerequisites
-
-* Python 3.8 or newer
-* (Optional) Virtual environment tool such as `venv` or `virtualenv`
-
----
-
 ## Installation
 
 1. Clone the repository:
