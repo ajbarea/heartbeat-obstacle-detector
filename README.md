@@ -8,10 +8,10 @@ A proof-of-concept implementation of the **Heartbeat** architectural tactic for 
 
 * [📖 Overview](#-overview)
 * [🏗️ Architecture](#️-architecture)
-* [Class Diagram](#class-diagram)
-* [Sequence Diagram](#sequence-diagram)
-* [Architecture Strengths](#architecture-strengths)
-* [UDP Communication Benefits](#udp-communication-benefits)
+* [📊 Class Diagram](#-class-diagram)
+* [📈 Sequence Diagram](#-sequence-diagram)
+* [💪 Architecture Strengths](#-architecture-strengths)
+* [📡 UDP Communication](#-why-udp-for-heartbeats)
 * [🔧 Components](#-components)
 * [🚀 Installation](#-installation)
 * [💻 Usage](#-usage)
@@ -39,7 +39,7 @@ The purpose is to demonstrate how the Heartbeat tactic can detect faults and rec
 
 ---
 
-## Class Diagram
+## 📊 Class Diagram
 
 The following class diagram shows the structure and relationships between the main components:
 
@@ -81,7 +81,7 @@ classDiagram
 
 ---
 
-## Sequence Diagram
+## 📈 Sequence Diagram
 
 The following sequence diagram illustrates the heartbeat monitoring system flow:
 
@@ -135,7 +135,7 @@ sequenceDiagram
 
 ---
 
-## Architecture Strengths
+## 💪 Architecture Strengths
 
 This heartbeat-based fault detection system provides several key advantages:
 
@@ -151,19 +151,19 @@ This heartbeat-based fault detection system provides several key advantages:
 
 ---
 
-## UDP Communication Benefits
+## 📡 Why UDP for Heartbeats
 
-The system uses **UDP (User Datagram Protocol)** for heartbeat transmission, which offers specific advantages for fault detection:
+In our self-driving car POC, UDP’s connectionless “fire-and-forget” design lets the obstacle detector send sub-millisecond heartbeats without TCP style handshakes, retransmits, or blocking.
 
-**🚀 Low Latency**: No connection setup overhead enables sub-millisecond heartbeat transmission for real-time fault detection.
+**🚀 Ultra-Low Latency:** No connection setup or retransmit delays.  
 
-**📦 Minimal Overhead**: Lightweight protocol reduces network bandwidth usage and system resource consumption.
+**📉 Minimal Overhead:** Lightweight datagrams cut bandwidth and CPU use.  
 
-**🔥 Fire-and-Forget**: Heartbeats are sent without waiting for acknowledgments, preventing blocking in the detection loop.
+**🔁 Stateless, Fire-and-Forget:** Missed packets merely indicate a failure—no blocking or retries.
 
-**🎯 Perfect for Heartbeats**: Occasional packet loss is acceptable since the next heartbeat arrives within 50ms.
+**🌡️ Fault-Tolerant by Design:** Occasional loss is acceptable; the next heartbeat arrives almost immediately.  
 
-**🌐 Simple Implementation**: Straightforward socket programming without complex connection management or state tracking.
+**⚙️ Simple Implementation:** Plain UDP sockets—no connection management or session state.
 
 ---
 
