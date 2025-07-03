@@ -37,9 +37,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/heartbeat-obstacle-detector"
-Repository = "https://github.com/yourusername/heartbeat-obstacle-detector.git"
-Issues = "https://github.com/yourusername/heartbeat-obstacle-detector/issues"
+Homepage = "https://github.com/ajbarea/heartbeat-obstacle-detector"
+Repository = "https://github.com/ajbarea/heartbeat-obstacle-detector.git"
+Issues = "https://github.com/ajbarea/heartbeat-obstacle-detector/issues"
 
 [project.scripts]
 heartbeat-monitor = "src.monitor:main"

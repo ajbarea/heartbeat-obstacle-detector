@@ -8,8 +8,11 @@ A proof-of-concept implementation of the **Heartbeat** architectural tactic for 
 
 * [📖 Overview](#-overview)
 * [🏗️ Architecture](#️-architecture)
+* [Class Diagram](#class-diagram)
+* [Sequence Diagram](#sequence-diagram)
+* [Architecture Strengths](#architecture-strengths)
+* [UDP Communication Benefits](#udp-communication-benefits)
 * [🔧 Components](#-components)
-* [📋 Prerequisites](#-prerequisites)
 * [🚀 Installation](#-installation)
 * [💻 Usage](#-usage)
 * [📁 Project Structure](#-project-structure)
