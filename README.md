@@ -177,19 +177,12 @@ The system uses **UDP (User Datagram Protocol)** for heartbeat transmission, whi
 
 ---
 
-## 📋 Prerequisites
-
-* 🐍 Python 3.8 or newer
-* 📦 (Optional) Virtual environment tool such as `venv` or `virtualenv`
-
----
-
 ## 🚀 Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/<your-username>/heartbeat-obstacle-detector.git
+   git clone https://github.com/ajbarea/heartbeat-obstacle-detector.git
    cd heartbeat-obstacle-detector
    ```
 
