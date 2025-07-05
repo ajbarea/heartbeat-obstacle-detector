@@ -75,7 +75,7 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
-files = ["heartbeat_obstacle_detector/detector.py", "heartbeat_obstacle_detector/monitor.py", "heartbeat_obstacle_detector/process_manager.py"]
+files = ["src/detector.py", "src/monitor.py", "src/process_manager.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
