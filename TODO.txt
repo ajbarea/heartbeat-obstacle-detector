@@ -1,14 +1,12 @@
-core functionality
-1. implement ProcessManager.start_process and ProcessManager.terminate_process
-2. implement ObstacleDetector.send_heartbeat and basic User Datagram Protocol communication (UDP)
-3. implement HeartbeatMonitor.receive_heartbeat and timeout detection
-
 integration
 1. connect monitor.py with process_manager.py
 2. implement main execution loops
-3. add logging and error handling
 
 testing
-1. pytest mock methods
-2. coverage
-3. centralized config options
+1. pytest (monitor and process_manager)
+2. coverage (>80)
+
+stretch goals:
+1. Replace print statements with proper logging (logging module)
+2. Add centralized configuration (config.py file or .env variables)
+3. Add integration tests for monitor + process_manager + detector

@@ -44,6 +44,35 @@ The purpose is to demonstrate how the Heartbeat tactic can detect faults and rec
 The following class diagram shows the structure and relationships between the main components:
 
 ```mermaid
+---
+config:
+  theme: 'base'
+  themeVariables:
+    primaryColor: '#E8F4FD'
+    primaryBorderColor: '#2196F3'
+    primaryTextColor: '#1565C0'
+    secondaryColor: '#F3E5F5'
+    secondaryBorderColor: '#9C27B0'
+    secondaryTextColor: '#6A1B9A'
+    tertiaryColor: '#E8F5E8'
+    tertiaryBorderColor: '#4CAF50'
+    tertiaryTextColor: '#2E7D32'
+    lineColor: '#424242'
+    background: '#FAFAFA'
+    textColor: '#212121'
+    nodeTextColor: '#1565C0'
+    edgeLabelBackground: '#FFFFFF'
+    clusterBkg: '#F5F5F5'
+    clusterBorder: '#BDBDBD'
+    fillType0: '#E3F2FD'
+    fillType1: '#F3E5F5'
+    fillType2: '#E8F5E8'
+    fillType3: '#FFF3E0'
+    fillType4: '#FCE4EC'
+    fillType5: '#F1F8E9'
+    fillType6: '#E0F2F1'
+    fillType7: '#FFF8E1'
+---
 classDiagram
     class HeartbeatMonitor {
         - timeout_threshold: int
@@ -86,6 +115,35 @@ classDiagram
 The following sequence diagram illustrates the heartbeat monitoring system flow:
 
 ```mermaid
+---
+config:
+  theme: 'base'
+  themeVariables:
+    primaryColor: '#E8F4FD'
+    primaryBorderColor: '#2196F3'
+    primaryTextColor: '#1565C0'
+    secondaryColor: '#F3E5F5'
+    secondaryBorderColor: '#9C27B0'
+    secondaryTextColor: '#6A1B9A'
+    tertiaryColor: '#E8F5E8'
+    tertiaryBorderColor: '#4CAF50'
+    tertiaryTextColor: '#2E7D32'
+    lineColor: '#424242'
+    background: '#FAFAFA'
+    textColor: '#212121'
+    nodeTextColor: '#1565C0'
+    edgeLabelBackground: '#FFFFFF'
+    clusterBkg: '#F5F5F5'
+    clusterBorder: '#BDBDBD'
+    fillType0: '#E3F2FD'
+    fillType1: '#F3E5F5'
+    fillType2: '#E8F5E8'
+    fillType3: '#FFF3E0'
+    fillType4: '#FCE4EC'
+    fillType5: '#F1F8E9'
+    fillType6: '#E0F2F1'
+    fillType7: '#FFF8E1'
+---
 sequenceDiagram
     participant M as HeartbeatMonitor
     participant P as ProcessManager
@@ -173,8 +231,7 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 * 👁️ `src/monitor.py`
 * ⚙️ `src/process_manager.py`
 * 📦 `pyproject.toml`
-* 📦 `requirements.txt`
-* 📖 `README.md`
+* `README.md`
 * 📁 `docs/` (Mermaid diagrams and documentation)
 * 📁 `tests/` (Test files)
 
@@ -200,9 +257,7 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 ## 💻 Usage
 
-**Note**: This is currently a proof-of-concept with skeleton implementation. The core functionality is not yet complete.
-
-1. Once implemented, start the monitor process (it will spawn the detector):
+1. Start the monitor process (it will spawn the detector):
 
     ```bash
     python src/monitor.py
@@ -210,7 +265,7 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 2. The monitor will automatically launch the detector process and begin monitoring for heartbeats.
 
-3. Observe logs for heartbeat reception and any detector restarts (when fully implemented).
+3. Observe logs for heartbeat reception and any detector restarts.
 
 ## 📁 Project Structure
 
@@ -227,7 +282,6 @@ heartbeat-obstacle-detector/
 │   ├── sequence.mermaid
 │   └── Fault-Detection Using Heartbeat Tactic.pdf
 ├── pyproject.toml
-├── requirements.txt
 ├── README.md
 └── .gitignore
 ```
