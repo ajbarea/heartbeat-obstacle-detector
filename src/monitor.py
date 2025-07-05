@@ -1,6 +1,8 @@
-"""Provide heartbeat-based monitoring and management for a detector process.
+"""Heartbeat-based monitoring and management system for detector processes.
 
-Monitors UDP heartbeat signals and restarts the process if signals are missed.
+This module implements a robust monitoring system that tracks UDP heartbeat signals
+from detector processes and automatically restarts them when heartbeats are missed.
+It provides fault tolerance through continuous monitoring and process lifecycle management.
 """
 
 import socket
@@ -12,10 +14,15 @@ from process_manager import ProcessManager
 
 
 class HeartbeatMonitor:
-    """Monitor and manage a detector process via heartbeat signals.
+    """Monitors and manages detector processes via heartbeat signals.
+
+    This class implements a fault-tolerant monitoring system that listens for UDP
+    heartbeat messages from detector processes. When heartbeats are missed beyond
+    a configured timeout threshold, it automatically restarts the monitored process
+    to ensure continuous operation.
 
     Attributes:
-        timeout_threshold (int): Maximum time in milliseconds to wait for a heartbeat.
+        timeout_threshold (int): Maximum time in milliseconds to wait for heartbeat.
         last_heartbeat (datetime): Timestamp of the last received heartbeat.
         heartbeat_socket (socket.socket): UDP socket for receiving heartbeat messages.
         process_manager (ProcessManager): Manager for the monitored process.
@@ -32,10 +39,14 @@ class HeartbeatMonitor:
     start_time: Optional[float]
 
     def __init__(self, duration: int = 60) -> None:
-        """Initialize HeartbeatMonitor.
+        """Initialize the heartbeat monitor with specified configuration.
+
+        Sets up the UDP socket for receiving heartbeat messages, configures the
+        timeout threshold, and initializes the process manager for handling
+        detector process lifecycle operations.
 
         Args:
-            duration (int): Total monitoring duration in seconds.
+            duration (int): Total monitoring duration in seconds. Defaults to 60.
         """
         self.timeout_threshold = 500  # Timeout threshold in milliseconds
         self.last_heartbeat = None
@@ -47,7 +58,11 @@ class HeartbeatMonitor:
         self.start_time = None
 
     def start_monitoring(self, cmd: List[str]) -> None:
-        """Run the monitoring loop for the detector process.
+        """Start the monitoring loop for the detector process.
+
+        Launches the detector process and begins continuous monitoring of heartbeat
+        signals. The monitoring loop runs for the specified duration, automatically
+        restarting the process when timeouts are detected.
 
         Args:
             cmd (List[str]): Command and arguments to start the detector process.
@@ -72,9 +87,11 @@ class HeartbeatMonitor:
             time.sleep(0.1)
 
     def receive_heartbeat(self) -> None:
-        """Receive and process an incoming heartbeat message.
+        """Receive and process incoming heartbeat messages.
 
-        Updates last_heartbeat when a message is received.
+        Listens for UDP heartbeat messages from the detector process and updates
+        the last heartbeat timestamp when a message is successfully received.
+        Uses non-blocking socket operations to avoid hanging the monitoring loop.
         """
         try:
             data, addr = self.heartbeat_socket.recvfrom(1024)
@@ -84,7 +101,11 @@ class HeartbeatMonitor:
             pass
 
     def check_timeout(self) -> bool:
-        """Check if the time since the last heartbeat exceeds the threshold.
+        """Check if the heartbeat timeout threshold has been exceeded.
+
+        Calculates the time elapsed since the last heartbeat and compares it
+        against the configured timeout threshold to determine if the detector
+        process should be considered unresponsive.
 
         Returns:
             bool: True if the timeout threshold has been exceeded, False otherwise.
@@ -97,7 +118,9 @@ class HeartbeatMonitor:
     def restart_process(self) -> None:
         """Restart the detector process and reset heartbeat tracking.
 
-        Triggers a process restart and updates last_heartbeat.
+        Triggers a complete restart of the detector process through the process
+        manager and resets the heartbeat timestamp to begin fresh monitoring.
+        This method is called when a heartbeat timeout is detected.
         """
         self.process_manager.restart_process()
         self.last_heartbeat = datetime.now()
