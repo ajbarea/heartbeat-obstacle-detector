@@ -319,7 +319,11 @@ def test_terminate_process_forced_shutdown(mock_kill, process_manager):
     mock_process.poll.assert_called_once()
     mock_process.terminate.assert_called_once()
     mock_process.wait.assert_called_once_with(timeout=5)
-    mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+    # On Unix-like systems, SIGKILL is used if available, otherwise SIGTERM
+    if hasattr(signal, "SIGKILL"):
+        mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
+    else:
+        mock_kill.assert_called_once_with(12345, signal.SIGTERM)
 
 
 @patch("os.kill")
@@ -372,7 +376,11 @@ def test_terminate_process_handles_process_lookup_error(mock_kill, process_manag
     mock_process.poll.assert_called_once()
     mock_process.terminate.assert_called_once()
     mock_process.wait.assert_called_once_with(timeout=5)
-    mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+    # On Unix-like systems, SIGKILL is used if available, otherwise SIGTERM
+    if hasattr(signal, "SIGKILL"):
+        mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
+    else:
+        mock_kill.assert_called_once_with(12345, signal.SIGTERM)
 
 
 @patch("os.kill")
@@ -398,6 +406,13 @@ def test_terminate_process_handles_os_error(mock_kill, process_manager):
     process_manager.terminate_process(mock_process)
 
     mock_process.poll.assert_called_once()
+    mock_process.terminate.assert_called_once()
+    mock_process.wait.assert_called_once_with(timeout=5)
+    # On Unix-like systems, SIGKILL is used if available, otherwise SIGTERM
+    if hasattr(signal, "SIGKILL"):
+        mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
+    else:
+        mock_kill.assert_called_once_with(12345, signal.SIGTERM)
     mock_process.terminate.assert_called_once()
     mock_process.wait.assert_called_once_with(timeout=5)
     mock_kill.assert_called_once_with(12345, signal.SIGTERM)
