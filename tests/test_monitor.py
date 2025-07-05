@@ -6,9 +6,10 @@ lifecycle operations.
 """
 
 import socket
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
+
+import pytest
 
 from src.monitor import HeartbeatMonitor
 
@@ -61,7 +62,6 @@ def test_initialization_default_values():
     with patch("src.monitor.socket.socket") as mock_socket_class, patch(
         "src.monitor.ProcessManager"
     ) as mock_pm_class:
-
         mock_socket = Mock()
         mock_socket_class.return_value = mock_socket
         mock_pm = Mock()
@@ -89,7 +89,6 @@ def test_initialization_custom_duration(duration):
         duration: Custom duration value to test.
     """
     with patch("src.monitor.socket.socket"), patch("src.monitor.ProcessManager"):
-
         monitor = HeartbeatMonitor(duration=duration)
 
         assert monitor.duration == duration
@@ -241,7 +240,6 @@ def test_start_monitoring_duration_reached(mock_time, mock_sleep, monitor_with_m
         with patch.object(monitor_with_mocks, "receive_heartbeat"), patch.object(
             monitor_with_mocks, "check_timeout", return_value=False
         ):
-
             monitor_with_mocks.start_monitoring(cmd)
 
     mock_pm.start_process.assert_called_once_with(cmd)
@@ -273,12 +271,43 @@ def test_start_monitoring_with_timeout(mock_time, mock_sleep, monitor_with_mocks
         with patch.object(monitor_with_mocks, "receive_heartbeat"), patch.object(
             monitor_with_mocks, "check_timeout", side_effect=[True, False]
         ), patch.object(monitor_with_mocks, "restart_process") as mock_restart:
-
             monitor_with_mocks.start_monitoring(cmd)
 
     mock_pm.start_process.assert_called_once_with(cmd)
     mock_restart.assert_called_once()
     mock_pm.terminate_process.assert_called_once_with(mock_pm.worker_process)
+
+
+def test_start_monitoring_skips_terminate_when_no_worker(monkeypatch, mock_socket):
+    """
+    Tests that start_monitoring does not call terminate_process when no worker_process exists.
+    """
+    from unittest.mock import Mock
+
+    from src.monitor import HeartbeatMonitor
+
+    # Setup mock process manager with no worker_process
+    mock_pm = Mock()
+    mock_pm.worker_process = None
+
+    # Patch socket.socket and ProcessManager to use our mocks
+    monkeypatch.setattr(
+        "src.monitor.socket.socket", lambda *args, **kwargs: mock_socket
+    )
+    monkeypatch.setattr("src.monitor.ProcessManager", lambda: mock_pm)
+
+    # Simulate time advancing past duration immediately
+    times = iter([0, 2])
+    monkeypatch.setattr("src.monitor.time.time", lambda: next(times))
+
+    monitor = HeartbeatMonitor(duration=1)
+    monitor.heartbeat_socket = mock_socket
+    monitor.process_manager = mock_pm
+
+    monitor.start_monitoring(["cmd"])
+
+    # terminate_process should not be called since worker_process is None
+    mock_pm.terminate_process.assert_not_called()
 
 
 class TestHeartbeatMonitorIntegration:

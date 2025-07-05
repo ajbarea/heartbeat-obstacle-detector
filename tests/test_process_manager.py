@@ -5,8 +5,9 @@ These tests cover process lifecycle operations, error handling, and state manage
 
 import signal
 import subprocess
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from src.process_manager import ProcessManager
 

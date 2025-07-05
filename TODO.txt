@@ -1,12 +1,7 @@
-integration
-1. connect monitor.py with process_manager.py
-2. implement main execution loops
+# TODO
 
-testing
-1. pytest (monitor and process_manager)
-2. coverage (>80)
-
-stretch goals:
-1. Replace print statements with proper logging (logging module)
-2. Add centralized configuration (config.py file or .env variables)
-3. Add integration tests for monitor + process_manager + detector
+- [ ] replace print statements with logging
+- [ ] centralized configuration (config.py or .env variables)
+- [ ] integration tests for monitor + process_manager + detector
+- [ ] improved UX?
+- [ ] some kind of plotting?

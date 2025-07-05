@@ -8,10 +8,11 @@ and graceful termination with proper cleanup.
 import os
 import signal
 import subprocess
+from typing import Any, List, Optional
 
 
 class ProcessManager:
-    """Manages the lifecycle of worker processes.
+    """Manages the lifecycle of worker processes
 
     This class provides methods to start, restart, and terminate worker processes
     while maintaining process state and command information.
@@ -21,12 +22,15 @@ class ProcessManager:
         worker_process (subprocess.Popen): Reference to the current worker process.
     """
 
-    def __init__(self):
+    worker_cmd: Optional[List[str]]
+    worker_process: Optional[subprocess.Popen[Any]]
+
+    def __init__(self) -> None:
         """Initializes a new process manager with no active worker."""
         self.worker_cmd = None
         self.worker_process = None
 
-    def start_process(self, cmd):
+    def start_process(self, cmd: List[str]) -> subprocess.Popen:
         """Launches a new worker process.
 
         Args:
@@ -37,12 +41,13 @@ class ProcessManager:
         """
         print(f"Starting worker process with command: {' '.join(cmd)}")
         self.worker_cmd = cmd
-        self.worker_process = subprocess.Popen(
+        proc = subprocess.Popen(
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        return self.worker_process
+        self.worker_process = proc
+        return proc
 
-    def restart_process(self):
+    def restart_process(self) -> subprocess.Popen:
         """Restarts the worker process.
 
         Terminates the current worker process if it's running and starts a new
@@ -62,12 +67,13 @@ class ProcessManager:
             self.terminate_process(self.worker_process)
 
         print(f"Restarting worker process with command: {' '.join(self.worker_cmd)}")
-        self.worker_process = subprocess.Popen(
+        proc = subprocess.Popen(
             self.worker_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        return self.worker_process
+        self.worker_process = proc
+        return proc
 
-    def terminate_process(self, proc):
+    def terminate_process(self, proc: subprocess.Popen) -> None:
         """Gracefully terminates a process with cleanup.
 
         Attempts graceful termination first, then forcefully terminates if the
@@ -84,7 +90,7 @@ class ProcessManager:
                 # Force termination if graceful shutdown fails
                 os.kill(proc.pid, signal.SIGTERM)
 
-    def is_process_running(self):
+    def is_process_running(self) -> bool:
         """Checks if the worker process is currently running.
 
         Returns:

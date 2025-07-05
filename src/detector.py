@@ -9,6 +9,7 @@ import random
 import socket
 import time
 from datetime import datetime
+from typing import Optional
 
 
 class ObstacleDetector:
@@ -24,7 +25,7 @@ class ObstacleDetector:
         monitor_address (tuple): Tuple of (host, port) for the monitoring process.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes the obstacle detector with default configuration.
 
         The detector is configured with a 50ms heartbeat interval and establishes
@@ -35,7 +36,7 @@ class ObstacleDetector:
         self.monitor_address = ("localhost", 9999)
         self._running = False
 
-    def run_detection_loop(self, max_iterations=None):
+    def run_detection_loop(self, max_iterations: Optional[int] = None) -> None:
         """Runs the main detection loop.
 
         Executes the core functionality in a continuous loop:
@@ -62,11 +63,11 @@ class ObstacleDetector:
             self.simulate_failure()
             time.sleep(self.heartbeat_interval / 1000)
 
-    def stop(self):
+    def stop(self) -> None:
         """Stops the detection loop gracefully."""
         self._running = False
 
-    def send_heartbeat(self):
+    def send_heartbeat(self) -> None:
         """Sends a timestamped heartbeat message to the monitor process.
 
         Creates and transmits a heartbeat message containing the current timestamp
@@ -77,7 +78,7 @@ class ObstacleDetector:
         self.heartbeat_socket.sendto(message.encode("utf-8"), self.monitor_address)
         print(f"Heartbeat sent at {now}")
 
-    def simulate_failure(self):
+    def simulate_failure(self) -> None:
         """Simulates random process failures for testing.
 
         Introduces a 1% chance of process termination on each call,
@@ -87,7 +88,7 @@ class ObstacleDetector:
             print("Simulating a crash...")
             exit(1)
 
-    def detect_obstacles(self):
+    def detect_obstacles(self) -> None:
         """Simulates obstacle detection with random delays and distances.
 
         Mimics a real obstacle detection process by introducing random processing

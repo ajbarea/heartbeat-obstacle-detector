@@ -6,8 +6,9 @@ and configuration validation.
 """
 
 import socket
-import pytest
 from datetime import datetime
+
+import pytest
 
 from src.detector import ObstacleDetector
 
