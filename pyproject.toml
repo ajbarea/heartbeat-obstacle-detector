@@ -34,16 +34,15 @@ dev = [
     "mypy>=1.0.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-mock>=3.6.0",
+    "pre-commit>=3.0.0",
+    "pysonar>=0.1.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ajbarea/heartbeat-obstacle-detector"
 Repository = "https://github.com/ajbarea/heartbeat-obstacle-detector.git"
 Issues = "https://github.com/ajbarea/heartbeat-obstacle-detector/issues"
-
-[project.scripts]
-heartbeat-monitor = "src.monitor:main"
-obstacle-detector = "src.detector:main"
 
 # Tool configurations
 [tool.black]
@@ -93,7 +92,7 @@ addopts = [
 
 [tool.coverage.run]
 source = ["."]
-omit = ["tests/*", "venv/*", ".venv/*"]
+omit = ["tests/*", "venv/*", ".venv/*", "**/__init__.py"]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -103,3 +102,8 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.sonar]
+projectKey = "ajbarea_heartbeat-obstacle-detector"
+projectName = "Heartbeat Obstacle Detector"
+projectVersion = "0.1.0"

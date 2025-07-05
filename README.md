@@ -1,137 +1,53 @@
 # 🚗💓 Heartbeat Obstacle Detector
 
+[![codecov](https://codecov.io/gh/ajbarea/heartbeat-obstacle-detector/graph/badge.svg?token=7HZoKzaPld)](https://codecov.io/gh/ajbarea/heartbeat-obstacle-detector) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ajbarea_heartbeat-obstacle-detector&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ajbarea_heartbeat-obstacle-detector)
+
 A proof-of-concept implementation of the **Heartbeat** architectural tactic for fault detection and recovery, applied to an obstacle detection module in a self-driving car case study.
 
 ---
 
 ## 📋 Table of Contents
 
-* [📖 Overview](#-overview)
-* [🏗️ Architecture](#️-architecture)
-* [📊 Class Diagram](#-class-diagram)
-* [📈 Sequence Diagram](#-sequence-diagram)
-* [💪 Architecture Strengths](#-architecture-strengths)
-* [📡 UDP Communication](#-why-udp-for-heartbeats)
-* [🔧 Components](#-components)
-* [🚀 Installation](#-installation)
-* [💻 Usage](#-usage)
-* [📁 Project Structure](#-project-structure)
+- [📖 Overview](#-overview)
+- [🏗️ Architecture](#️-architecture)
+- [💪 Architecture Strengths](#-architecture-strengths)
+- [📡 UDP Communication](#-why-udp-for-heartbeats)
+- [🔧 Components](#-components)
+- [🚀 Installation](#-installation)
+- [💻 Usage](#-usage)
+- [📁 Project Structure](#-project-structure)
+- [⚙️ Configuration](#️-configuration)
 
 ---
 
 ## 📖 Overview
 
-This repository contains three Python scripts:
+This repository contains three Python modules implementing a fault-tolerant heartbeat monitoring system:
 
-1. **🔍 src/detector.py**: Simulates an obstacle detection module that periodically sends heartbeat messages and randomly fails to mimic real-world crashes.
-2. **👁️ src/monitor.py**: Listens for heartbeat messages from `detector.py` and coordinates fault detection and recovery.
-3. **⚙️ src/process_manager.py**: Handles launching, monitoring, and restarting the detector process as part of the heartbeat fault detection system.
+1. **⚙️ process_manager.py**: **Main orchestrator** that coordinates the entire system and manages component lifecycle.
+2. **👁️ monitor.py**: **Monitoring service** that listens for heartbeat messages and detects timeouts.
+3. **🔍 detector.py**: **Worker process** that simulates obstacle detection and sends periodic heartbeat messages.
 
-The purpose is to demonstrate how the Heartbeat tactic can detect faults and recover a critical sensing process in a distributed system.
+The purpose is to demonstrate how the Heartbeat tactic can detect faults and recover a critical sensing process in a distributed system with proper architectural separation.
 
 ---
 
 ## 🏗️ Architecture
 
-* **🔍 Worker Process (`detector.py`)**: Sends a timestamped "alive" signal over UDP at regular intervals. Includes dummy obstacle distance outputs and random failure injection.
-* **👁️ Monitor Process (`monitor.py`)**: Receives heartbeats, tracks timing, logs failures, and coordinates fault detection and recovery.
-* **⚙️ Process Manager (`process_manager.py`)**: Handles launching, monitoring, and restarting the detector process as part of the heartbeat fault detection system.
+The system uses a **hierarchical orchestration pattern** with clear separation of concerns:
 
----
+- **⚙️ ProcessManager (Main Orchestrator)**: Coordinates the entire system, manages component lifecycle, and serves as the primary entry point.
+- **👁️ HeartbeatMonitor (Monitoring Service)**: Focuses on UDP heartbeat detection, timeout monitoring, and fault notification.
+- **🔍 ObstacleDetector (Worker Process)**: Performs obstacle detection simulation and sends periodic heartbeat signals.
 
-## 📊 Class Diagram
+**Key Architectural Improvements:**
 
-The following class diagram shows the structure and relationships between the main components:
+- **Single Entry Point**: ProcessManager serves as the main orchestrator
+- **Service-Oriented Design**: HeartbeatMonitor operates as a focused service
+- **Centralized Control**: All system lifecycle management in one place
+- **Proper Dependencies**: Clear hierarchy prevents circular dependencies
 
-```mermaid
-classDiagram
-    class HeartbeatMonitor {
-        - timeout_threshold: int
-        - last_heartbeat: datetime
-        - heartbeat_socket: socket
-        + start_monitoring(cmd: str): void
-        + receive_heartbeat(): void
-        + check_timeout(): bool
-        + restart_process(cmd: str): void
-    }
-
-    class ProcessManager {
-        - worker_cmd: str
-        - worker_process: Process
-        + start_process(cmd: str): Process
-        + restart_process(cmd: str): Process
-        + terminate_process(proc: Process): void
-        + is_process_running(): bool
-    }
-
-    class ObstacleDetector {
-        - heartbeat_interval: int
-        - heartbeat_socket: socket
-        - monitor_address: tuple
-        + run_detection_loop(): void
-        + send_heartbeat(): void
-        + simulate_failure(): void
-        + detect_obstacles(): void
-    }
-
-    HeartbeatMonitor ..> ProcessManager : uses
-    ProcessManager --> ObstacleDetector : manages
-    ObstacleDetector --> HeartbeatMonitor : sendHeartbeat
-```
-
----
-
-## 📈 Sequence Diagram
-
-The following sequence diagram illustrates the heartbeat monitoring system flow:
-
-```mermaid
-sequenceDiagram
-    participant M as HeartbeatMonitor
-    participant P as ProcessManager
-    participant W as ObstacleDetector
-
-    Note over M,P: Initialization
-    activate M
-    M->>P: start_process("src/detector.py")
-    activate P
-    P->>W: launch
-    activate W
-    W-->>P: acknowledgment
-    deactivate W
-    P-->>M: started successfully
-    deactivate P
-    deactivate M
-
-    loop Every 50 ms
-        activate W
-        W->>M: send_heartbeat()
-        deactivate W
-        Note right of M: record timestamp locally
-    end
-
-    alt Crash
-        activate W
-        W->>W: simulate_failure()
-        deactivate W
-        Note right of W: no more heartbeats
-    end
-
-    alt Timeout (> 500 ms)
-        activate M
-        M->>M: check_timeout()
-        Note right of M: timeout detected
-        M->>P: restart_process("src/detector.py")
-        activate P
-        P->>W: launch
-        activate W
-        W-->>P: acknowledgment
-        deactivate W
-        P-->>M: restarted successfully
-        deactivate P
-        deactivate M
-    end
-```
+For detailed architecture diagrams and technical documentation, see **[📋 Software Architecture Documentation](docs/software_architecture.md)**.
 
 ---
 
@@ -155,13 +71,13 @@ This heartbeat-based fault detection system provides several key advantages:
 
 In our self-driving car POC, UDP’s connectionless “fire-and-forget” design lets the obstacle detector send sub-millisecond heartbeats without TCP style handshakes, retransmits, or blocking.
 
-**🚀 Ultra-Low Latency:** No connection setup or retransmit delays.  
+**🚀 Ultra-Low Latency:** No connection setup or retransmit delays.
 
-**📉 Minimal Overhead:** Lightweight datagrams cut bandwidth and CPU use.  
+**📉 Minimal Overhead:** Lightweight datagrams cut bandwidth and CPU use.
 
 **🔁 Stateless, Fire-and-Forget:** Missed packets merely indicate a failure—no blocking or retries.
 
-**🌡️ Fault-Tolerant by Design:** Occasional loss is acceptable; the next heartbeat arrives almost immediately.  
+**🌡️ Fault-Tolerant by Design:** Occasional loss is acceptable; the next heartbeat arrives almost immediately.
 
 **⚙️ Simple Implementation:** Plain UDP sockets—no connection management or session state.
 
@@ -169,14 +85,15 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 ## 🔧 Components
 
-* 🔍 `src/detector.py`
-* 👁️ `src/monitor.py`
-* ⚙️ `src/process_manager.py`
-* 📦 `pyproject.toml`
-* 📦 `requirements.txt`
-* 📖 `README.md`
-* 📁 `docs/` (Mermaid diagrams and documentation)
-* 📁 `tests/` (Test files)
+- 🔍 `detector.py` - Obstacle detection worker with heartbeat transmission
+- 👁️ `monitor.py` - Heartbeat monitoring service with timeout detection
+- ⚙️ `process_manager.py` - Main orchestrator and system entry point
+- ⚙️ `config.py` - Centralized configuration management
+- � `logger.py` - Logging configuration and utilities
+- �📦 `pyproject.toml` - Project configuration and dependencies
+- `README.md` - Project documentation
+- 📁 `docs/` - Mermaid diagrams and architecture documentation
+- 📁 `tests/` - Comprehensive unit test suite
 
 ---
 
@@ -200,34 +117,71 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 ## 💻 Usage
 
-**Note**: This is currently a proof-of-concept with skeleton implementation. The core functionality is not yet complete.
+### Usage Options
 
-1. Once implemented, start the monitor process (it will spawn the detector):
+1. **Start the complete system** (recommended):
+
+    ```bash
+    python src/process_manager.py
+
+    # With custom duration (e.g., 120 seconds)
+    python src/process_manager.py 120
+    ```
+
+2. **Monitor service** (standalone mode):
 
     ```bash
     python src/monitor.py
     ```
 
-2. The monitor will automatically launch the detector process and begin monitoring for heartbeats.
+3. **Detector worker** (standalone mode):
 
-3. Observe logs for heartbeat reception and any detector restarts (when fully implemented).
+    ```bash
+    python src/detector.py
+    ```
+
+### System Operation
+
+- The ProcessManager orchestrates the entire system lifecycle
+- HeartbeatMonitor automatically detects timeouts and coordinates restarts
+- ObstacleDetector sends heartbeats every 50ms with 1% random failure rate
+- System runs for specified duration (default 60 seconds) then gracefully shuts down
+
+### ⚙️ Configuration
+
+The system can be configured through environment variables:
+
+- `HEARTBEAT_INTERVAL`: Heartbeat interval in milliseconds (default: 50)
+- `TIMEOUT_THRESHOLD`: Timeout threshold in milliseconds (default: 500)
+- `HEARTBEAT_HOST`: Host for heartbeat communication (default: localhost)
+- `HEARTBEAT_PORT`: Port for heartbeat communication (default: 9999)
+- `DEFAULT_DURATION`: Default system duration in seconds (default: 60)
+
+---
 
 ## 📁 Project Structure
 
 ```text
 heartbeat-obstacle-detector/
 ├── src/
-│   ├── detector.py
-│   ├── monitor.py
-│   └── process_manager.py
+│   ├── process_manager.py          # Main orchestrator and system entry point
+│   ├── monitor.py                  # Heartbeat monitoring service
+│   ├── detector.py                 # Obstacle detector worker process
+│   ├── config.py                   # Centralized configuration management
+│   └── logger.py                   # Logging configuration and utilities
 ├── tests/
-│   └── .gitkeep
+│   ├── test_detector.py           # Unit tests for detector
+│   ├── test_monitor.py            # Unit tests for monitor
+│   └── test_process_manager.py    # Unit tests for process manager
 ├── docs/
-│   ├── class.mermaid
-│   ├── sequence.mermaid
-│   └── Fault-Detection Using Heartbeat Tactic.pdf
-├── pyproject.toml
-├── requirements.txt
-├── README.md
-└── .gitignore
+│   ├── class.mermaid              # Class diagram source
+│   ├── sequence.mermaid           # Sequence diagram source
+│   └── software_architecture.md   # Detailed architecture docs
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions CI workflow
+├── logs/                          # Application logs directory
+├── pyproject.toml                 # Project configuration and dependencies
+├── README.md                      # This file
+└── lint.sh                        # Linting script for pre-commit hooks
 ```
