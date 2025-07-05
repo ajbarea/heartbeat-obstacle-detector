@@ -322,6 +322,87 @@ def test_terminate_process_forced_shutdown(mock_kill, process_manager):
     mock_kill.assert_called_once_with(12345, signal.SIGTERM)
 
 
+@patch("os.kill")
+@patch("signal.SIGKILL", 9, create=True)  # Mock SIGKILL availability
+def test_terminate_process_forced_shutdown_with_sigkill(mock_kill, process_manager):
+    """Verify terminate_process uses SIGKILL when available on Unix-like systems.
+
+    Tests that the process termination correctly uses SIGKILL for more forceful
+    termination when it's available (typically on Unix-like systems).
+
+    Args:
+        mock_kill (Callable): Mock for os.kill.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    mock_process = Mock()
+    mock_process.poll.return_value = None
+    mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.pid = 12345
+
+    process_manager.terminate_process(mock_process)
+
+    mock_process.poll.assert_called_once()
+    mock_process.terminate.assert_called_once()
+    mock_process.wait.assert_called_once_with(timeout=5)
+    mock_kill.assert_called_once_with(12345, 9)  # SIGKILL = 9
+
+
+@patch("os.kill")
+def test_terminate_process_handles_process_lookup_error(mock_kill, process_manager):
+    """Verify terminate_process handles ProcessLookupError gracefully.
+
+    Tests that the process termination handles race conditions where the process
+    terminates between timeout and kill signal, raising ProcessLookupError.
+
+    Args:
+        mock_kill (Callable): Mock for os.kill.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    mock_process = Mock()
+    mock_process.poll.return_value = None
+    mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.pid = 12345
+
+    # Simulate ProcessLookupError when trying to kill the process
+    mock_kill.side_effect = ProcessLookupError("No such process")
+
+    # This should not raise an exception
+    process_manager.terminate_process(mock_process)
+
+    mock_process.poll.assert_called_once()
+    mock_process.terminate.assert_called_once()
+    mock_process.wait.assert_called_once_with(timeout=5)
+    mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+
+
+@patch("os.kill")
+def test_terminate_process_handles_os_error(mock_kill, process_manager):
+    """Verify terminate_process handles OSError gracefully.
+
+    Tests that the process termination handles OS-level errors (like permission
+    denied) when trying to send kill signals.
+
+    Args:
+        mock_kill (Callable): Mock for os.kill.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    mock_process = Mock()
+    mock_process.poll.return_value = None
+    mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.pid = 12345
+
+    # Simulate OSError when trying to kill the process
+    mock_kill.side_effect = OSError("Operation not permitted")
+
+    # This should not raise an exception
+    process_manager.terminate_process(mock_process)
+
+    mock_process.poll.assert_called_once()
+    mock_process.terminate.assert_called_once()
+    mock_process.wait.assert_called_once_with(timeout=5)
+    mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+
+
 class TestProcessManagerIntegration:
     """Integration tests for ProcessManager workflow scenarios.
 

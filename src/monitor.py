@@ -96,7 +96,7 @@ class HeartbeatMonitor:
         Uses non-blocking socket operations to avoid hanging the monitoring loop.
         """
         try:
-            data, addr = self.heartbeat_socket.recvfrom(1024)
+            _, _ = self.heartbeat_socket.recvfrom(1024)
             self.last_heartbeat = datetime.now()
             print(f"Heartbeat received at {self.last_heartbeat}")
         except socket.error:

@@ -1,8 +1,8 @@
-"""Main orchestration system for heartbeat-based obstacle detection.
+"""Orchestrate heartbeat-based obstacle detection system.
 
-This module serves as the primary entry point and orchestrator for the entire
-heartbeat monitoring system. It coordinates the HeartbeatMonitor service and
-ObstacleDetector worker process to provide fault-tolerant obstacle detection.
+This module provides the main entry point and coordination layer for the complete
+heartbeat monitoring system, managing the HeartbeatMonitor service and
+ObstacleDetector worker process for fault-tolerant obstacle detection.
 """
 
 import os
@@ -14,17 +14,17 @@ from monitor import HeartbeatMonitor
 
 
 class ProcessManager:
-    """Main orchestrator for the heartbeat-based obstacle detection system.
+    """Orchestrate the heartbeat-based obstacle detection system.
 
-    This class serves as the primary entry point and coordinates all system components.
-    It manages both the HeartbeatMonitor service and ObstacleDetector worker process,
-    providing centralized control over the entire fault-tolerant system.
+    Coordinates all system components including the HeartbeatMonitor service and
+    ObstacleDetector worker process, providing centralized control over the entire
+    fault-tolerant system lifecycle.
 
     Attributes:
-        worker_cmd (list): The command used to start the worker process.
-        worker_process (subprocess.Popen): Reference to the current worker process.
-        monitor (HeartbeatMonitor): The heartbeat monitoring service.
-        duration (int): Total system runtime duration in seconds.
+        worker_cmd: Command used to start the worker process.
+        worker_process: Reference to the current worker process.
+        monitor: The heartbeat monitoring service instance.
+        duration: Total system runtime duration in seconds.
     """
 
     worker_cmd: Optional[List[str]]
@@ -33,13 +33,10 @@ class ProcessManager:
     duration: int
 
     def __init__(self, duration: int = 60) -> None:
-        """Initialize the process manager as the main system orchestrator.
-
-        Creates a new process manager instance that will coordinate the entire
-        heartbeat monitoring system including the monitor service and detector worker.
+        """Initialize the process manager.
 
         Args:
-            duration (int): Total system runtime duration in seconds. Defaults to 60.
+            duration: Total system runtime duration in seconds.
         """
         self.worker_cmd = None
         self.worker_process = None
@@ -47,17 +44,13 @@ class ProcessManager:
         self.duration = duration
 
     def start_process(self, cmd: List[str]) -> subprocess.Popen[Any]:
-        """Launch a new worker process with the specified command.
-
-        Creates and starts a new subprocess using the provided command and arguments.
-        The process is configured to run without displaying output to keep the
-        monitoring system clean.
+        """Launch a new worker process.
 
         Args:
-            cmd (list): Command and arguments to start the worker process.
+            cmd: Command and arguments to start the worker process.
 
         Returns:
-            subprocess.Popen: Reference to the started worker process.
+            Reference to the started worker process.
         """
         print(f"Starting worker process with command: {' '.join(cmd)}")
         self.worker_cmd = cmd
@@ -70,12 +63,8 @@ class ProcessManager:
     def restart_process(self) -> subprocess.Popen[Any]:
         """Restart the worker process with the stored command.
 
-        Terminates the current worker process if it's running and launches a new
-        instance using the previously stored command. This ensures a clean restart
-        with the same configuration.
-
         Returns:
-            subprocess.Popen: Reference to the new worker process.
+            Reference to the new worker process.
 
         Raises:
             ValueError: If no command was previously stored via start_process().
@@ -97,30 +86,33 @@ class ProcessManager:
     def terminate_process(self, proc: subprocess.Popen[Any]) -> None:
         """Gracefully terminate a process with proper cleanup.
 
-        Attempts graceful termination first using SIGTERM, then waits for the
-        process to exit cleanly. If the process doesn't terminate within the
-        timeout period, it forces termination to prevent hanging.
+        Attempts graceful termination first, then forces termination if the process
+        doesn't exit within the timeout period.
 
         Args:
-            proc (subprocess.Popen): Process to terminate.
+            proc: Process to terminate.
         """
         if proc.poll() is None:
             proc.terminate()
             try:
-                proc.wait(timeout=5)  # Wait up to 5 seconds for graceful termination
+                proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                # Force termination if graceful shutdown fails
-                os.kill(proc.pid, signal.SIGTERM)
+                try:
+                    # Use SIGKILL on Unix-like systems for forceful termination
+                    if hasattr(signal, "SIGKILL"):
+                        os.kill(proc.pid, getattr(signal, "SIGKILL"))
+                    else:
+                        # Fallback for Windows systems
+                        os.kill(proc.pid, signal.SIGTERM)
+                except (OSError, ProcessLookupError):
+                    # Process already terminated - ignore race condition
+                    pass
 
     def is_process_running(self) -> bool:
         """Check if the worker process is currently running.
 
-        Verifies that the worker process exists and is still active by checking
-        its process state. This method is used to determine if process management
-        actions are needed.
-
         Returns:
-            bool: True if the worker process exists and is running, False otherwise.
+            True if the worker process exists and is running, False otherwise.
         """
         if not self.worker_process:
             return False
@@ -130,22 +122,16 @@ class ProcessManager:
         """Start the complete heartbeat monitoring system.
 
         Initializes and starts both the HeartbeatMonitor service and the
-        ObstacleDetector worker process. This is the main entry point for
-        the entire system.
+        ObstacleDetector worker process.
 
         Args:
-            detector_cmd (List[str]): Command and arguments for the detector process.
+            detector_cmd: Command and arguments for the detector process.
         """
         print("Starting heartbeat monitoring system...")
         print(f"System duration: {self.duration} seconds")
 
-        # Create and configure the monitor service
         self.monitor = HeartbeatMonitor(duration=self.duration)
-
-        # Set the process manager reference in the monitor
         self.monitor.process_manager = self
-
-        # Start the monitoring system
         self.monitor.start_monitoring(detector_cmd)
 
         print("System shutdown completed.")
@@ -170,17 +156,13 @@ class ProcessManager:
 
 
 def main() -> None:  # pragma: no cover
-    """Main entry point for the heartbeat monitoring system.
-
-    Creates and starts the complete system with default configuration.
-    """
+    """Main entry point for the heartbeat monitoring system."""
     import sys
 
-    # Default configuration
     duration = 60
     detector_cmd = ["python", "src/detector.py"]
 
-    # Parse command line arguments for duration if provided
+    # Parse command line arguments for duration
     if len(sys.argv) > 1:
         try:
             duration = int(sys.argv[1])
@@ -190,7 +172,6 @@ def main() -> None:  # pragma: no cover
                 f"Invalid duration '{sys.argv[1]}', using default: {duration} seconds"
             )
 
-    # Create and start the system
     manager = ProcessManager(duration=duration)
 
     try:
