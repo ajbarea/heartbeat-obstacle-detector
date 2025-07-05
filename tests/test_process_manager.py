@@ -1,6 +1,8 @@
 """Unit tests for the ProcessManager class.
 
-These tests cover process lifecycle operations, error handling, and state management.
+This module contains comprehensive unit tests for the process management system,
+covering process lifecycle operations, error handling, and state management
+with proper mocking and validation.
 """
 
 import signal
@@ -17,7 +19,7 @@ def process_manager():
     """Create and return a ProcessManager instance for testing.
 
     Returns:
-        ProcessManager: A new ProcessManager instance.
+        ProcessManager: A new ProcessManager instance with clean state.
     """
     return ProcessManager()
 
@@ -27,7 +29,7 @@ def mock_process():
     """Create a mock subprocess.Popen instance with a running state.
 
     Returns:
-        Mock: A mock Popen process with a running state.
+        Mock: A mock Popen process configured to simulate a running process.
     """
     mock_proc = Mock(spec=subprocess.Popen)
     mock_proc.poll.return_value = None
@@ -37,6 +39,9 @@ def mock_process():
 
 def test_initialization(process_manager):
     """Verify that a new ProcessManager has no worker command or process.
+
+    Tests that the ProcessManager initializes with clean state and no
+    active worker processes or stored commands.
 
     Args:
         process_manager (ProcessManager): Fixture providing a clean manager.
@@ -48,7 +53,10 @@ def test_initialization(process_manager):
 @patch("subprocess.Popen")
 @patch("builtins.print")
 def test_start_process(mock_print, mock_popen, process_manager, mock_process):
-    """Start a worker process with the given command and verify Popen invocation and print output.
+    """Start a worker process with the given command and verify setup.
+
+    Tests that the process manager correctly starts a new worker process
+    with the specified command and properly stores the process reference.
 
     Args:
         mock_print (Mock): Mock for builtins.print.
@@ -97,7 +105,10 @@ def test_start_process(mock_print, mock_popen, process_manager, mock_process):
 def test_start_process_with_various_commands(
     mock_print, mock_popen, process_manager, mock_process, cmd, expected_message
 ):
-    """Verify start_process prints the correct message for various command formats.
+    """Verify start_process prints correct messages for various command formats.
+
+    Tests that the process manager correctly formats and displays command
+    information when starting processes with different argument structures.
 
     Args:
         mock_print (Mock): Mock for builtins.print.
@@ -115,7 +126,10 @@ def test_start_process_with_various_commands(
 
 
 def test_restart_process_no_command_stored(process_manager):
-    """Verify restart_process raises a ValueError when no command is stored.
+    """Verify restart_process raises ValueError when no command is stored.
+
+    Tests that attempting to restart a process without first calling
+    start_process raises the appropriate error with a clear message.
 
     Args:
         process_manager (ProcessManager): Fixture providing a manager.
@@ -132,6 +146,9 @@ def test_restart_process_no_existing_process(
     mock_print, mock_popen, process_manager, mock_process
 ):
     """Restart process when no existing process is running and verify new process start.
+
+    Tests that the process manager correctly handles restart operations
+    when no existing process is currently running.
 
     Args:
         mock_print (Mock): Mock for builtins.print.
@@ -162,6 +179,9 @@ def test_restart_process_no_existing_process(
 @patch("builtins.print")
 def test_restart_process_with_running_process(mock_print, mock_popen, process_manager):
     """Terminate a running process and restart it, verifying termination and restart logic.
+
+    Tests that the process manager correctly handles restart operations
+    when an existing process is currently running, ensuring proper cleanup.
 
     Args:
         mock_print (Mock): Mock for builtins.print.
@@ -206,6 +226,9 @@ def test_is_process_running(
 ):
     """Verify is_process_running returns correct boolean based on process poll state.
 
+    Tests that the process running check correctly interprets the poll result
+    to determine if a process is still active.
+
     Args:
         process_manager (ProcessManager): Fixture providing a manager.
         mock_process (Mock): Fixture providing a mock Popen process.
@@ -224,6 +247,9 @@ def test_is_process_running(
 def test_is_process_running_no_process(process_manager):
     """Verify is_process_running returns False when no process is set.
 
+    Tests that the process running check correctly handles the case
+    when no worker process has been assigned.
+
     Args:
         process_manager (ProcessManager): Fixture providing a manager.
     """
@@ -236,6 +262,9 @@ def test_is_process_running_no_process(process_manager):
 
 def test_terminate_process_already_terminated(process_manager):
     """Verify terminate_process does nothing when the process is already terminated.
+
+    Tests that the termination logic correctly handles processes that have
+    already exited and avoids unnecessary termination attempts.
 
     Args:
         process_manager (ProcessManager): Fixture providing a manager.
@@ -251,7 +280,11 @@ def test_terminate_process_already_terminated(process_manager):
 
 
 def test_terminate_process_graceful_shutdown(process_manager):
-    """Test terminate_process with successful graceful shutdown."""
+    """Test terminate_process with successful graceful shutdown.
+
+    Verifies that the process termination correctly handles graceful
+    shutdown scenarios where the process exits cleanly.
+    """
     mock_process = Mock()
     mock_process.poll.return_value = None  # Process is running
     mock_process.wait.return_value = 0  # Graceful shutdown
@@ -266,6 +299,9 @@ def test_terminate_process_graceful_shutdown(process_manager):
 @patch("os.kill")
 def test_terminate_process_forced_shutdown(mock_kill, process_manager):
     """Verify terminate_process forces shutdown if graceful termination times out.
+
+    Tests that the process termination correctly handles timeout scenarios
+    by forcing process termination when graceful shutdown fails.
 
     Args:
         mock_kill (Callable): Mock for os.kill.
@@ -285,14 +321,18 @@ def test_terminate_process_forced_shutdown(mock_kill, process_manager):
 
 
 class TestProcessManagerIntegration:
-    """Integration tests for ProcessManager workflow scenarios."""
+    """Integration tests for ProcessManager workflow scenarios.
+
+    This class contains integration tests that verify the complete process
+    management workflows including start, restart, and termination sequences.
+    """
 
     @pytest.fixture
     def manager(self):
         """Create and return a ProcessManager instance for integration tests.
 
         Returns:
-            ProcessManager: A new ProcessManager instance.
+            ProcessManager: A new ProcessManager instance for integration testing.
         """
         return ProcessManager()
 
@@ -300,6 +340,9 @@ class TestProcessManagerIntegration:
     @patch("builtins.print")
     def test_full_lifecycle(self, mock_print, mock_popen, manager):
         """Test the complete lifecycle: start -> restart -> terminate.
+
+        Verifies that the process manager correctly handles a complete
+        process lifecycle including initial start, restart, and termination.
 
         Args:
             mock_print (Mock): Mock for builtins.print.
@@ -344,6 +387,9 @@ class TestProcessManagerIntegration:
 
     def test_error_handling_workflow(self, manager):
         """Test error handling for restart without start, is_process_running, and terminate with None.
+
+        Verifies that the process manager correctly handles error conditions
+        and edge cases in various workflow scenarios.
 
         Args:
             manager (ProcessManager): Fixture providing a manager.

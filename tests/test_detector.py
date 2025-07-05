@@ -15,17 +15,17 @@ from src.detector import ObstacleDetector
 
 @pytest.fixture
 def detector():
-    """Creates an ObstacleDetector instance for testing.
+    """Create an ObstacleDetector instance for testing.
 
     Returns:
-        ObstacleDetector: Configured detector instance.
+        ObstacleDetector: Configured detector instance with default settings.
     """
     return ObstacleDetector()
 
 
 @pytest.fixture
 def mocked_detector(mocker):
-    """Creates an ObstacleDetector instance with mocked socket for testing.
+    """Create an ObstacleDetector instance with mocked socket for testing.
 
     Args:
         mocker: Pytest mocker fixture for creating mock objects.
@@ -39,7 +39,10 @@ def mocked_detector(mocker):
 
 
 def test_send_heartbeat(mocked_detector, mocker):
-    """Verifies heartbeat message formatting and transmission.
+    """Verify heartbeat message formatting and transmission.
+
+    Tests that heartbeat messages are properly formatted with timestamps
+    and sent to the correct monitor address via UDP socket.
 
     Args:
         mocked_detector: ObstacleDetector fixture with mocked socket.
@@ -58,7 +61,10 @@ def test_send_heartbeat(mocked_detector, mocker):
 
 
 def test_run_detection_loop(mocked_detector, mocker):
-    """Validates detection loop execution for specified iterations.
+    """Validate detection loop execution for specified iterations.
+
+    Tests that the detection loop runs for the exact number of specified
+    iterations, sending heartbeats and performing detection activities.
 
     Args:
         mocked_detector: ObstacleDetector fixture with mocked socket.
@@ -80,7 +86,10 @@ def test_run_detection_loop(mocked_detector, mocker):
 
 
 def test_detect_obstacles(detector, mocker):
-    """Tests obstacle detection simulation with timing and distance calculation.
+    """Test obstacle detection simulation with timing and distance calculation.
+
+    Verifies that obstacle detection includes proper timing delays and
+    generates random distance measurements as expected.
 
     Args:
         detector: ObstacleDetector fixture.
@@ -105,7 +114,10 @@ def test_detect_obstacles(detector, mocker):
     ],
 )
 def test_simulate_failure(detector, mocker, random_value, should_exit):
-    """Tests failure simulation with various probability values.
+    """Test failure simulation with various probability values.
+
+    Verifies that the failure simulation correctly triggers or avoids
+    process termination based on random probability thresholds.
 
     Args:
         detector: ObstacleDetector fixture.
@@ -136,7 +148,10 @@ def test_simulate_failure(detector, mocker, random_value, should_exit):
     ],
 )
 def test_configuration_values(detector, attribute, expected_value, description):
-    """Validates default configuration values.
+    """Validate default configuration values.
+
+    Tests that the detector initializes with correct default values
+    for all critical configuration parameters.
 
     Args:
         detector: ObstacleDetector fixture.
@@ -149,7 +164,10 @@ def test_configuration_values(detector, attribute, expected_value, description):
 
 @pytest.fixture
 def real_socket():
-    """Creates a real socket for testing and ensures cleanup.
+    """Create a real socket for testing and ensure cleanup.
+
+    Provides a real UDP socket for integration testing and automatically
+    handles cleanup to prevent resource leaks.
 
     Yields:
         socket.socket: A real UDP socket for testing.
@@ -162,7 +180,10 @@ def real_socket():
 
 
 def test_heartbeat_socket_configuration(real_socket):
-    """Confirms socket is configured for IPv4 UDP communication.
+    """Confirm socket is configured for IPv4 UDP communication.
+
+    Validates that the heartbeat socket is properly configured for
+    IPv4 UDP communication as required by the heartbeat protocol.
 
     Args:
         real_socket: Real socket fixture with automatic cleanup.
@@ -172,7 +193,10 @@ def test_heartbeat_socket_configuration(real_socket):
 
 
 def test_stop_detection_loop(mocked_detector, mocker):
-    """Tests graceful termination of the detection loop.
+    """Test graceful termination of the detection loop.
+
+    Verifies that the detection loop can be stopped gracefully and
+    that the running state is properly updated.
 
     Args:
         mocked_detector: ObstacleDetector fixture with mocked socket.
@@ -198,7 +222,11 @@ def test_stop_detection_loop(mocked_detector, mocker):
 
 
 def test_detector_initialization():
-    """Tests that detector initializes with correct default state."""
+    """Test that detector initializes with correct default state.
+
+    Verifies that a new detector instance is created with all expected
+    default values and proper socket configuration.
+    """
     detector = ObstacleDetector()
 
     assert detector.heartbeat_interval == 50
@@ -211,7 +239,11 @@ def test_detector_initialization():
 
 
 def test_stop_method():
-    """Tests the stop method sets the running flag to False."""
+    """Test the stop method sets the running flag to False.
+
+    Verifies that the stop method correctly updates the internal running
+    state to allow graceful termination of the detection loop.
+    """
     detector = ObstacleDetector()
 
     detector._running = True

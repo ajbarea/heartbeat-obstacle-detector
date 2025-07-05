@@ -16,10 +16,10 @@ from src.monitor import HeartbeatMonitor
 
 @pytest.fixture
 def mock_socket():
-    """Creates a mock socket for testing.
+    """Create a mock socket for testing.
 
     Returns:
-        Mock: Mock socket instance with common methods.
+        Mock: Mock socket instance with common socket methods.
     """
     mock_sock = Mock(spec=socket.socket)
     return mock_sock
@@ -27,10 +27,10 @@ def mock_socket():
 
 @pytest.fixture
 def mock_process_manager():
-    """Creates a mock ProcessManager for testing.
+    """Create a mock ProcessManager for testing.
 
     Returns:
-        Mock: Mock ProcessManager instance.
+        Mock: Mock ProcessManager instance with worker process.
     """
     mock_pm = Mock()
     mock_pm.worker_process = Mock()
@@ -39,7 +39,10 @@ def mock_process_manager():
 
 @pytest.fixture
 def monitor_with_mocks(mock_socket, mock_process_manager):
-    """Creates a HeartbeatMonitor with mocked dependencies.
+    """Create a HeartbeatMonitor with mocked dependencies.
+
+    Sets up a HeartbeatMonitor instance with mocked socket and process
+    manager for isolated testing of monitor functionality.
 
     Args:
         mock_socket: Mock socket fixture.
@@ -58,7 +61,11 @@ def monitor_with_mocks(mock_socket, mock_process_manager):
 
 
 def test_initialization_default_values():
-    """Tests HeartbeatMonitor initialization with default values."""
+    """Test HeartbeatMonitor initialization with default values.
+
+    Verifies that the monitor initializes with correct default configuration
+    including timeout threshold, duration, and proper socket setup.
+    """
     with patch("src.monitor.socket.socket") as mock_socket_class, patch(
         "src.monitor.ProcessManager"
     ) as mock_pm_class:
@@ -83,7 +90,10 @@ def test_initialization_default_values():
 
 @pytest.mark.parametrize("duration", [30, 60, 120, 300])
 def test_initialization_custom_duration(duration):
-    """Tests HeartbeatMonitor initialization with custom duration values.
+    """Test HeartbeatMonitor initialization with custom duration values.
+
+    Verifies that the monitor correctly accepts and stores custom duration
+    values during initialization.
 
     Args:
         duration: Custom duration value to test.
@@ -95,7 +105,10 @@ def test_initialization_custom_duration(duration):
 
 
 def test_receive_heartbeat_success(monitor_with_mocks):
-    """Tests successful heartbeat reception and timestamp update.
+    """Test successful heartbeat reception and timestamp update.
+
+    Verifies that heartbeat messages are properly received and that
+    the last heartbeat timestamp is correctly updated.
 
     Args:
         monitor_with_mocks: HeartbeatMonitor with mocked dependencies.
@@ -114,7 +127,10 @@ def test_receive_heartbeat_success(monitor_with_mocks):
 
 
 def test_receive_heartbeat_socket_error(monitor_with_mocks):
-    """Tests heartbeat reception handles socket errors gracefully.
+    """Test heartbeat reception handles socket errors gracefully.
+
+    Verifies that socket errors during heartbeat reception are handled
+    without affecting the monitor's state or causing crashes.
 
     Args:
         monitor_with_mocks: HeartbeatMonitor with mocked dependencies.
@@ -132,7 +148,10 @@ def test_receive_heartbeat_socket_error(monitor_with_mocks):
 
 
 def test_check_timeout_no_heartbeat_received(monitor_with_mocks):
-    """Tests timeout check when no heartbeat has been received.
+    """Test timeout check when no heartbeat has been received.
+
+    Verifies that the timeout check correctly handles the case where
+    no heartbeat has been received yet.
 
     Args:
         monitor_with_mocks: HeartbeatMonitor with mocked dependencies.
@@ -145,7 +164,10 @@ def test_check_timeout_no_heartbeat_received(monitor_with_mocks):
 
 
 def test_check_timeout_within_threshold(monitor_with_mocks):
-    """Tests timeout check when heartbeat is within threshold.
+    """Test timeout check when heartbeat is within threshold.
+
+    Verifies that recent heartbeats are correctly identified as within
+    the acceptable timeout threshold.
 
     Args:
         monitor_with_mocks: HeartbeatMonitor with mocked dependencies.
@@ -159,7 +181,10 @@ def test_check_timeout_within_threshold(monitor_with_mocks):
 
 
 def test_check_timeout_exceeds_threshold(monitor_with_mocks):
-    """Tests timeout check when heartbeat exceeds threshold.
+    """Test timeout check when heartbeat exceeds threshold.
+
+    Verifies that old heartbeats are correctly identified as exceeding
+    the timeout threshold and requiring process restart.
 
     Args:
         monitor_with_mocks: HeartbeatMonitor with mocked dependencies.
