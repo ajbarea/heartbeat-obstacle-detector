@@ -16,6 +16,7 @@ A proof-of-concept implementation of the **Heartbeat** architectural tactic for 
 - [🚀 Installation](#-installation)
 - [💻 Usage](#-usage)
 - [📁 Project Structure](#-project-structure)
+- [⚙️ Configuration](#️-configuration)
 
 ---
 
@@ -84,13 +85,15 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 ## 🔧 Components
 
-- 🔍 `detector.py`
-- 👁️ `monitor.py`
-- ⚙️ `process_manager.py`
-- 📦 `pyproject.toml`
-- `README.md`
-- 📁 `docs/` (Mermaid diagrams and documentation)
-- 📁 `tests/` (Test files)
+- 🔍 `detector.py` - Obstacle detection worker with heartbeat transmission
+- 👁️ `monitor.py` - Heartbeat monitoring service with timeout detection
+- ⚙️ `process_manager.py` - Main orchestrator and system entry point
+- ⚙️ `config.py` - Centralized configuration management
+- � `logger.py` - Logging configuration and utilities
+- �📦 `pyproject.toml` - Project configuration and dependencies
+- `README.md` - Project documentation
+- 📁 `docs/` - Mermaid diagrams and architecture documentation
+- 📁 `tests/` - Comprehensive unit test suite
 
 ---
 
@@ -144,6 +147,18 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 - ObstacleDetector sends heartbeats every 50ms with 1% random failure rate
 - System runs for specified duration (default 60 seconds) then gracefully shuts down
 
+### ⚙️ Configuration
+
+The system can be configured through environment variables:
+
+- `HEARTBEAT_INTERVAL`: Heartbeat interval in milliseconds (default: 50)
+- `TIMEOUT_THRESHOLD`: Timeout threshold in milliseconds (default: 500)
+- `HEARTBEAT_HOST`: Host for heartbeat communication (default: localhost)
+- `HEARTBEAT_PORT`: Port for heartbeat communication (default: 9999)
+- `DEFAULT_DURATION`: Default system duration in seconds (default: 60)
+
+---
+
 ## 📁 Project Structure
 
 ```text
@@ -151,7 +166,9 @@ heartbeat-obstacle-detector/
 ├── src/
 │   ├── process_manager.py          # Main orchestrator and system entry point
 │   ├── monitor.py                  # Heartbeat monitoring service
-│   └── detector.py                 # Obstacle detector worker process
+│   ├── detector.py                 # Obstacle detector worker process
+│   ├── config.py                   # Centralized configuration management
+│   └── logger.py                   # Logging configuration and utilities
 ├── tests/
 │   ├── test_detector.py           # Unit tests for detector
 │   ├── test_monitor.py            # Unit tests for monitor
@@ -163,7 +180,8 @@ heartbeat-obstacle-detector/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml                 # GitHub Actions CI workflow
+├── logs/                          # Application logs directory
 ├── pyproject.toml                 # Project configuration and dependencies
 ├── README.md                      # This file
-├── lint.sh                        # Linting script for pre-commit hooks
+└── lint.sh                        # Linting script for pre-commit hooks
 ```

@@ -243,7 +243,7 @@ def test_restart_process_no_process_manager(mocker):
     """Test restart_process when process_manager is None.
 
     Verifies that the restart_process method handles the case where
-    process_manager is None by printing an error message without crashing.
+    process_manager is None by logging an error message without crashing.
     """
     mock_socket = Mock()
     mock_logger = mocker.patch("src.monitor.logger")
@@ -253,7 +253,6 @@ def test_restart_process_no_process_manager(mocker):
 
         monitor.restart_process()
 
-        # Should print error message
         mock_logger.error.assert_called_once_with(
             "Error: ProcessManager not available for restart."
         )

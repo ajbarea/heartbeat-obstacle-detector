@@ -52,15 +52,15 @@ def test_initialization(process_manager):
 
 
 @patch("subprocess.Popen")
-@patch("builtins.print")
-def test_start_process(mock_print, mock_popen, process_manager, mock_process):
+@patch("src.process_manager.logger")
+def test_start_process(mock_logger, mock_popen, process_manager, mock_process):
     """Start a worker process with the given command and verify setup.
 
     Tests that the process manager correctly starts a new worker process
     with the specified command and properly stores the process reference.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         mock_popen (Mock): Mock for subprocess.Popen.
         process_manager (ProcessManager): Fixture providing a manager.
         mock_process (Mock): Fixture providing a mock Popen process.
@@ -79,7 +79,7 @@ def test_start_process(mock_print, mock_popen, process_manager, mock_process):
     mock_popen.assert_called_once_with(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
-    mock_print.assert_called_once_with(
+    mock_logger.info.assert_called_once_with(
         "Starting worker process with command: python worker.py"
     )
 
@@ -102,17 +102,17 @@ def test_start_process(mock_print, mock_popen, process_manager, mock_process):
     ],
 )
 @patch("subprocess.Popen")
-@patch("builtins.print")
+@patch("src.process_manager.logger")
 def test_start_process_with_various_commands(
-    mock_print, mock_popen, process_manager, mock_process, cmd, expected_message
+    mock_logger, mock_popen, process_manager, mock_process, cmd, expected_message
 ):
-    """Verify start_process prints correct messages for various command formats.
+    """Verify start_process logs correct messages for various command formats.
 
-    Tests that the process manager correctly formats and displays command
+    Tests that the process manager correctly formats and logs command
     information when starting processes with different argument structures.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         mock_popen (Mock): Mock for subprocess.Popen.
         process_manager (ProcessManager): Fixture providing a manager.
         mock_process (Mock): Fixture providing a mock Popen process.
@@ -123,7 +123,7 @@ def test_start_process_with_various_commands(
 
     process_manager.start_process(cmd)
 
-    mock_print.assert_called_once_with(expected_message)
+    mock_logger.info.assert_called_once_with(expected_message)
 
 
 def test_restart_process_no_command_stored(process_manager):
@@ -142,9 +142,9 @@ def test_restart_process_no_command_stored(process_manager):
 
 
 @patch("subprocess.Popen")
-@patch("builtins.print")
+@patch("src.process_manager.logger")
 def test_restart_process_no_existing_process(
-    mock_print, mock_popen, process_manager, mock_process
+    mock_logger, mock_popen, process_manager, mock_process
 ):
     """Restart process when no existing process is running and verify new process start.
 
@@ -152,7 +152,7 @@ def test_restart_process_no_existing_process(
     when no existing process is currently running.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         mock_popen (Mock): Mock for subprocess.Popen.
         process_manager (ProcessManager): Fixture providing a manager.
         mock_process (Mock): Fixture providing a mock Popen process.
@@ -171,21 +171,21 @@ def test_restart_process_no_existing_process(
     mock_popen.assert_called_once_with(
         ["python", "worker.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
-    mock_print.assert_called_once_with(
+    mock_logger.info.assert_called_once_with(
         "Restarting worker process with command: python worker.py"
     )
 
 
 @patch("subprocess.Popen")
-@patch("builtins.print")
-def test_restart_process_with_running_process(mock_print, mock_popen, process_manager):
+@patch("src.process_manager.logger")
+def test_restart_process_with_running_process(mock_logger, mock_popen, process_manager):
     """Terminate a running process and restart it, verifying termination and restart logic.
 
     Tests that the process manager correctly handles restart operations
     when an existing process is currently running, ensuring proper cleanup.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         mock_popen (Mock): Mock for subprocess.Popen.
         process_manager (ProcessManager): Fixture providing a manager.
     """
@@ -207,8 +207,8 @@ def test_restart_process_with_running_process(mock_print, mock_popen, process_ma
         assert result == mock_new_process
         assert process_manager.worker_process == mock_new_process
         mock_terminate.assert_called_once_with(mock_old_process)
-        mock_print.assert_any_call("Terminating existing worker process...")
-        mock_print.assert_any_call(
+        mock_logger.info.assert_any_call("Terminating existing worker process...")
+        mock_logger.info.assert_any_call(
             "Restarting worker process with command: python worker.py"
         )
 
@@ -446,15 +446,15 @@ class TestProcessManagerIntegration:
         return ProcessManager()
 
     @patch("subprocess.Popen")
-    @patch("builtins.print")
-    def test_full_lifecycle(self, mock_print, mock_popen, manager):
+    @patch("src.process_manager.logger")
+    def test_full_lifecycle(self, mock_logger, mock_popen, manager):
         """Test the complete lifecycle: start -> restart -> terminate.
 
         Verifies that the process manager correctly handles a complete
         process lifecycle including initial start, restart, and termination.
 
         Args:
-            mock_print (Mock): Mock for builtins.print.
+            mock_logger (Mock): Mock for logger.
             mock_popen (Mock): Mock for subprocess.Popen.
             manager (ProcessManager): Fixture providing a manager.
         """
@@ -484,13 +484,13 @@ class TestProcessManagerIntegration:
             assert manager.worker_process == mock_process2
             mock_terminate.assert_called_once_with(mock_process1)
 
-        # Verify print calls
-        assert mock_print.call_count == 3
-        mock_print.assert_any_call(
+        # Verify log calls
+        assert mock_logger.info.call_count == 3
+        mock_logger.info.assert_any_call(
             "Starting worker process with command: python worker.py"
         )
-        mock_print.assert_any_call("Terminating existing worker process...")
-        mock_print.assert_any_call(
+        mock_logger.info.assert_any_call("Terminating existing worker process...")
+        mock_logger.info.assert_any_call(
             "Restarting worker process with command: python worker.py"
         )
 
@@ -515,15 +515,15 @@ class TestProcessManagerIntegration:
         assert manager.is_process_running() is False
 
 
-@patch("builtins.print")
-def test_start_system(mock_print, process_manager):
+@patch("src.process_manager.logger")
+def test_start_system(mock_logger, process_manager):
     """Test the start_system method coordinates the entire system.
 
     Verifies that start_system properly sets up the monitor and
     delegates to the monitor's start_monitoring method.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     detector_cmd = ["python", "src/detector.py"]
@@ -543,14 +543,14 @@ def test_start_system(mock_print, process_manager):
         mock_monitor.start_monitoring.assert_called_once_with(detector_cmd)
 
 
-@patch("builtins.print")
-def test_shutdown_system(mock_print, process_manager):
+@patch("src.process_manager.logger")
+def test_shutdown_system(mock_logger, process_manager):
     """Test the shutdown_system method handles cleanup properly.
 
     Verifies that shutdown_system terminates processes and closes sockets.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     # Set up mock worker process
@@ -574,15 +574,15 @@ def test_shutdown_system(mock_print, process_manager):
         mock_socket.close.assert_called_once()
 
 
-@patch("builtins.print")
-def test_shutdown_system_no_worker(mock_print, process_manager):
+@patch("src.process_manager.logger")
+def test_shutdown_system_no_worker(mock_logger, process_manager):
     """Test shutdown_system when no worker process exists.
 
     Verifies that shutdown_system handles the case where no worker
     process is running without errors.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     # Set up mock monitor without worker
@@ -602,15 +602,15 @@ def test_shutdown_system_no_worker(mock_print, process_manager):
         mock_socket.close.assert_called_once()
 
 
-@patch("builtins.print")
-def test_shutdown_system_no_monitor(mock_print, process_manager):
+@patch("src.process_manager.logger")
+def test_shutdown_system_no_monitor(mock_logger, process_manager):
     """Test shutdown_system when no monitor exists.
 
     Verifies that shutdown_system handles the case where no monitor
     has been set up without errors.
 
     Args:
-        mock_print (Mock): Mock for builtins.print.
+        mock_logger (Mock): Mock for logger.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     # Set up mock worker process only

@@ -9,7 +9,10 @@ import subprocess
 from typing import Any, List, Optional
 
 from config import DEFAULT_DURATION
+from logger import get_logger
 from monitor import HeartbeatMonitor
+
+logger = get_logger(__name__)
 
 
 class ProcessManager:
@@ -51,7 +54,7 @@ class ProcessManager:
         Returns:
             Reference to the started worker process.
         """
-        print(f"Starting worker process with command: {' '.join(cmd)}")
+        logger.info(f"Starting worker process with command: {' '.join(cmd)}")
         self.worker_cmd = cmd
         proc = subprocess.Popen(
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -72,10 +75,12 @@ class ProcessManager:
             raise ValueError("No command stored. Call start_process() first.")
 
         if self.worker_process and self.is_process_running():
-            print("Terminating existing worker process...")
+            logger.info("Terminating existing worker process...")
             self.terminate_process(self.worker_process)
 
-        print(f"Restarting worker process with command: {' '.join(self.worker_cmd)}")
+        logger.info(
+            f"Restarting worker process with command: {' '.join(self.worker_cmd)}"
+        )
         proc = subprocess.Popen(
             self.worker_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
@@ -97,10 +102,9 @@ class ProcessManager:
             try:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                # Use subprocess.kill() for safe forceful termination
                 try:
                     proc.kill()
-                    proc.wait(timeout=2)  # Give it a moment to cleanup
+                    proc.wait(timeout=2)
                 except (OSError, subprocess.TimeoutExpired):
                     pass
 
@@ -123,14 +127,14 @@ class ProcessManager:
         Args:
             detector_cmd: Command and arguments for the detector process.
         """
-        print("Starting heartbeat monitoring system...")
-        print(f"System duration: {self.duration} seconds")
+        logger.info("Starting heartbeat monitoring system...")
+        logger.info(f"System duration: {self.duration} seconds")
 
         self.monitor = HeartbeatMonitor(duration=self.duration)
         self.monitor.process_manager = self
         self.monitor.start_monitoring(detector_cmd)
 
-        print("System shutdown completed.")
+        logger.info("System shutdown completed.")
 
     def shutdown_system(self) -> None:
         """Gracefully shutdown the entire monitoring system.
@@ -138,17 +142,17 @@ class ProcessManager:
         Terminates all running processes and cleans up resources in the
         correct order to ensure proper system shutdown.
         """
-        print("Shutting down system...")
+        logger.info("Shutting down system...")
 
         if self.worker_process and self.is_process_running():
-            print("Terminating detector process...")
+            logger.info("Terminating detector process...")
             self.terminate_process(self.worker_process)
 
         if self.monitor and hasattr(self.monitor, "heartbeat_socket"):
-            print("Closing monitor socket...")
+            logger.info("Closing monitor socket...")
             self.monitor.heartbeat_socket.close()
 
-        print("System shutdown completed.")
+        logger.info("System shutdown completed.")
 
 
 def main() -> None:  # pragma: no cover
@@ -162,9 +166,9 @@ def main() -> None:  # pragma: no cover
     if len(sys.argv) > 1:
         try:
             duration = int(sys.argv[1])
-            print(f"Using custom duration: {duration} seconds")
+            logger.info(f"Using custom duration: {duration} seconds")
         except ValueError:
-            print(
+            logger.warning(
                 f"Invalid duration '{sys.argv[1]}', using default: {duration} seconds"
             )
 
@@ -173,10 +177,10 @@ def main() -> None:  # pragma: no cover
     try:
         manager.start_system(detector_cmd)
     except KeyboardInterrupt:
-        print("\nReceived interrupt signal...")
+        logger.info("\nReceived interrupt signal...")
         manager.shutdown_system()
     except Exception as e:
-        print(f"System error: {e}")
+        logger.error(f"System error: {e}")
         manager.shutdown_system()
         sys.exit(1)
 
