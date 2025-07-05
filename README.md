@@ -40,13 +40,6 @@ The system uses a **hierarchical orchestration pattern** with clear separation o
 - **👁️ HeartbeatMonitor (Monitoring Service)**: Focuses on UDP heartbeat detection, timeout monitoring, and fault notification.
 - **🔍 ObstacleDetector (Worker Process)**: Performs obstacle detection simulation and sends periodic heartbeat signals.
 
-**Key Architectural Improvements:**
-
-- **Single Entry Point**: ProcessManager serves as the main orchestrator
-- **Service-Oriented Design**: HeartbeatMonitor operates as a focused service
-- **Centralized Control**: All system lifecycle management in one place
-- **Proper Dependencies**: Clear hierarchy prevents circular dependencies
-
 For detailed architecture diagrams and technical documentation, see **[📋 Software Architecture Documentation](docs/software_architecture.md)**.
 
 ---
@@ -54,6 +47,8 @@ For detailed architecture diagrams and technical documentation, see **[📋 Soft
 ## 💪 Architecture Strengths
 
 This heartbeat-based fault detection system provides several key advantages:
+
+**🎯 Single Entry Point**: ProcessManager serves as the main orchestrator, providing centralized system control and lifecycle management.
 
 **🔄 Automatic Recovery**: Detects process failures within 500ms and automatically restarts the obstacle detection module without manual intervention.
 
@@ -64,6 +59,8 @@ This heartbeat-based fault detection system provides several key advantages:
 **🛡️ Fault Isolation**: Process crashes are contained and don't affect the monitoring system, ensuring continuous supervision.
 
 **⚡ Real-time Response**: 50ms heartbeat interval provides rapid fault detection suitable for safety-critical automotive applications.
+
+**🔗 Proper Dependencies**: Clear hierarchy prevents circular dependencies and maintains clean architectural boundaries.
 
 ---
 
