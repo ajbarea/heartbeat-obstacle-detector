@@ -104,7 +104,7 @@ class ProcessManager:
                     else:
                         # Fallback for Windows systems
                         os.kill(proc.pid, signal.SIGTERM)
-                except (OSError, ProcessLookupError):
+                except OSError:
                     # Process already terminated - ignore race condition
                     pass
 

@@ -35,14 +35,23 @@ jobs:
         run: |
           pytest --cov --cov-branch --cov-report=xml
 
-      # 5. Run mypy type checking
+      # 5. Run mypy type checking (only on Ubuntu)
       - name: Run mypy type checking
+        if: matrix.os == 'ubuntu-latest'
         run: |
           python -m mypy src/ --strict
 
-      # 6. Upload coverage report to Codecov
+      # 6. Upload coverage report to Codecov (only on Ubuntu)
       - name: Upload coverage reports to Codecov
+        if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: ajbarea/heartbeat-obstacle-detector
+
+      # # 7. Run SonarQube analysis (only on Ubuntu)
+      # - name: SonarQube Scan
+      #   if: matrix.os == 'ubuntu-latest'
+      #   uses: SonarSource/sonarqube-scan-action@v5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
