@@ -5,9 +5,8 @@ covering process lifecycle operations, error handling, and state management
 with proper mocking and validation.
 """
 
-import signal
 import subprocess
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import pytest
 
@@ -298,77 +297,76 @@ def test_terminate_process_graceful_shutdown(process_manager):
     mock_process.wait.assert_called_once_with(timeout=5)
 
 
-@patch("os.kill")
-def test_terminate_process_forced_shutdown(mock_kill, process_manager):
+def test_terminate_process_forced_shutdown(process_manager):
     """Verify terminate_process forces shutdown if graceful termination times out.
 
     Tests that the process termination correctly handles timeout scenarios
     by forcing process termination when graceful shutdown fails.
 
     Args:
-        mock_kill (Callable): Mock for os.kill.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     mock_process = Mock()
     mock_process.poll.return_value = None
-    mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.wait.side_effect = [
+        subprocess.TimeoutExpired(cmd="test", timeout=5),
+        None,  # Second call succeeds after kill()
+    ]
     mock_process.pid = 12345
 
     process_manager.terminate_process(mock_process)
 
     mock_process.poll.assert_called_once()
     mock_process.terminate.assert_called_once()
-    mock_process.wait.assert_called_once_with(timeout=5)
-    # On Unix-like systems, SIGKILL is used if available, otherwise SIGTERM
-    if hasattr(signal, "SIGKILL"):
-        mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
-    else:
-        mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+    # Should call wait twice: once with timeout=5, then once with timeout=2
+    expected_calls = [call(timeout=5), call(timeout=2)]
+    mock_process.wait.assert_has_calls(expected_calls)
+    # Should call kill() when graceful termination times out
+    mock_process.kill.assert_called_once()
 
 
-@patch("os.kill")
-@patch("signal.SIGKILL", 9, create=True)  # Mock SIGKILL availability
-def test_terminate_process_forced_shutdown_with_sigkill(mock_kill, process_manager):
-    """Verify terminate_process uses SIGKILL when available on Unix-like systems.
+def test_terminate_process_forced_shutdown_with_sigkill(process_manager):
+    """Verify terminate_process uses proc.kill() for safe forceful termination.
 
-    Tests that the process termination correctly uses SIGKILL for more forceful
-    termination when it's available (typically on Unix-like systems).
+    Tests that the process termination correctly uses subprocess.kill() for safer
+    forceful termination instead of os.kill().
 
     Args:
-        mock_kill (Callable): Mock for os.kill.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     mock_process = Mock()
     mock_process.poll.return_value = None
-    mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.wait.side_effect = [
+        subprocess.TimeoutExpired(cmd="test", timeout=5),
+        None,  # Second call succeeds after kill()
+    ]
     mock_process.pid = 12345
 
     process_manager.terminate_process(mock_process)
 
     mock_process.poll.assert_called_once()
     mock_process.terminate.assert_called_once()
-    mock_process.wait.assert_called_once_with(timeout=5)
-    mock_kill.assert_called_once_with(12345, 9)  # SIGKILL = 9
+    # Should call wait twice: once with timeout=5, then once with timeout=2
+    expected_calls = [call(timeout=5), call(timeout=2)]
+    mock_process.wait.assert_has_calls(expected_calls)
+    # Should call kill() when graceful termination times out
+    mock_process.kill.assert_called_once()
 
 
-@patch("os.kill")
-def test_terminate_process_handles_process_lookup_error(mock_kill, process_manager):
-    """Verify terminate_process handles ProcessLookupError gracefully.
+def test_terminate_process_handles_process_lookup_error(process_manager):
+    """Verify terminate_process handles OSError gracefully during kill().
 
     Tests that the process termination handles race conditions where the process
-    terminates between timeout and kill signal, raising ProcessLookupError.
+    terminates between timeout and kill signal, raising OSError.
 
     Args:
-        mock_kill (Callable): Mock for os.kill.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     mock_process = Mock()
     mock_process.poll.return_value = None
     mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.kill.side_effect = OSError("No such process")
     mock_process.pid = 12345
-
-    # Simulate ProcessLookupError when trying to kill the process
-    mock_kill.side_effect = ProcessLookupError("No such process")
 
     # This should not raise an exception
     process_manager.terminate_process(mock_process)
@@ -376,31 +374,23 @@ def test_terminate_process_handles_process_lookup_error(mock_kill, process_manag
     mock_process.poll.assert_called_once()
     mock_process.terminate.assert_called_once()
     mock_process.wait.assert_called_once_with(timeout=5)
-    # On Unix-like systems, SIGKILL is used if available, otherwise SIGTERM
-    if hasattr(signal, "SIGKILL"):
-        mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
-    else:
-        mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+    mock_process.kill.assert_called_once()
 
 
-@patch("os.kill")
-def test_terminate_process_handles_os_error(mock_kill, process_manager):
+def test_terminate_process_handles_os_error(process_manager):
     """Verify terminate_process handles OSError gracefully.
 
     Tests that the process termination handles OS-level errors (like permission
     denied) when trying to send kill signals.
 
     Args:
-        mock_kill (Callable): Mock for os.kill.
         process_manager (ProcessManager): Fixture providing a manager.
     """
     mock_process = Mock()
     mock_process.poll.return_value = None
     mock_process.wait.side_effect = subprocess.TimeoutExpired(cmd="test", timeout=5)
+    mock_process.kill.side_effect = OSError("Operation not permitted")
     mock_process.pid = 12345
-
-    # Simulate OSError when trying to kill the process
-    mock_kill.side_effect = OSError("Operation not permitted")
 
     # This should not raise an exception
     process_manager.terminate_process(mock_process)
@@ -408,11 +398,35 @@ def test_terminate_process_handles_os_error(mock_kill, process_manager):
     mock_process.poll.assert_called_once()
     mock_process.terminate.assert_called_once()
     mock_process.wait.assert_called_once_with(timeout=5)
-    # On Unix-like systems, SIGKILL is used if available, otherwise SIGTERM
-    if hasattr(signal, "SIGKILL"):
-        mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
-    else:
-        mock_kill.assert_called_once_with(12345, signal.SIGTERM)
+    mock_process.kill.assert_called_once()
+
+
+def test_terminate_process_handles_timeout_after_kill(process_manager):
+    """Verify terminate_process handles TimeoutExpired during second wait().
+
+    Tests that the process termination handles cases where the process doesn't
+    terminate even after kill() is called, and the second wait() times out.
+
+    Args:
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    mock_process = Mock()
+    mock_process.poll.return_value = None
+    mock_process.wait.side_effect = [
+        subprocess.TimeoutExpired(cmd="test", timeout=5),
+        subprocess.TimeoutExpired(cmd="test", timeout=2),  # Second wait also times out
+    ]
+    mock_process.pid = 12345
+
+    # This should not raise an exception
+    process_manager.terminate_process(mock_process)
+
+    mock_process.poll.assert_called_once()
+    mock_process.terminate.assert_called_once()
+    # Should call wait twice: once with timeout=5, then once with timeout=2
+    expected_calls = [call(timeout=5), call(timeout=2)]
+    mock_process.wait.assert_has_calls(expected_calls)
+    mock_process.kill.assert_called_once()
 
 
 class TestProcessManagerIntegration:

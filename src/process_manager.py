@@ -5,8 +5,6 @@ heartbeat monitoring system, managing the HeartbeatMonitor service and
 ObstacleDetector worker process for fault-tolerant obstacle detection.
 """
 
-import os
-import signal
 import subprocess
 from typing import Any, List, Optional
 
@@ -87,7 +85,8 @@ class ProcessManager:
         """Gracefully terminate a process with proper cleanup.
 
         Attempts graceful termination first, then forces termination if the process
-        doesn't exit within the timeout period.
+        doesn't exit within the timeout period. Uses safe process termination to
+        avoid PID reuse attacks and race conditions.
 
         Args:
             proc: Process to terminate.
@@ -97,15 +96,13 @@ class ProcessManager:
             try:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
+                # Use subprocess.kill() for safe forceful termination
+                # This is safer than os.kill() as it validates process ownership
                 try:
-                    # Use SIGKILL on Unix-like systems for forceful termination
-                    if hasattr(signal, "SIGKILL"):
-                        os.kill(proc.pid, getattr(signal, "SIGKILL"))
-                    else:
-                        # Fallback for Windows systems
-                        os.kill(proc.pid, signal.SIGTERM)
-                except OSError:
-                    # Process already terminated - ignore race condition
+                    proc.kill()
+                    proc.wait(timeout=2)  # Give it a moment to cleanup
+                except (OSError, subprocess.TimeoutExpired):
+                    # Process already terminated or cleanup timeout - ignore
                     pass
 
     def is_process_running(self) -> bool:
