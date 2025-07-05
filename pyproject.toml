@@ -36,6 +36,8 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.6.0",
     "pre-commit>=3.0.0",
+    "pysonar>=0.1.0",
+
 ]
 
 [project.urls]
@@ -101,3 +103,8 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.sonar]
+projectKey = "ajbarea_heartbeat-obstacle-detector"
+projectName = "Heartbeat Obstacle Detector"
+projectVersion = "0.1.0"

@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11"]
 
     steps:
@@ -46,10 +46,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: ajbarea/heartbeat-obstacle-detector
-
-      # 8. Run SonarQube analysis (only on Ubuntu)
-      - name: SonarQube Scan
-        if: matrix.os == 'ubuntu-latest'
-        uses: SonarSource/sonarqube-scan-action@v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
