@@ -14,9 +14,9 @@ A proof-of-concept implementation of the **Heartbeat** architectural tactic for 
 - [📡 UDP Communication](#-why-udp-for-heartbeats)
 - [🔧 Components](#-components)
 - [🚀 Installation](#-installation)
+- [⚙️ Configuration](#️-configuration)
 - [💻 Usage](#-usage)
 - [📁 Project Structure](#-project-structure)
-- [⚙️ Configuration](#️-configuration)
 
 ---
 
@@ -87,13 +87,13 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 - 🔍 `detector.py` - Obstacle detection worker with heartbeat transmission
 - 👁️ `monitor.py` - Heartbeat monitoring service with timeout detection
-- ⚙️ `process_manager.py` - Main orchestrator and system entry point
+- 🎯 `process_manager.py` - Main orchestrator and system entry point
 - ⚙️ `config.py` - Centralized configuration management
-- � `logger.py` - Logging configuration and utilities
-- �📦 `pyproject.toml` - Project configuration and dependencies
-- `README.md` - Project documentation
-- 📁 `docs/` - Mermaid diagrams and architecture documentation
-- 📁 `tests/` - Comprehensive unit test suite
+- 📝 `logger.py` - Logging configuration and utilities
+- 📦 `pyproject.toml` - Project configuration and dependencies
+- 📄 `README.md` - Project documentation
+- 📚 `docs/` - Mermaid diagrams and architecture documentation
+- 🧪 `tests/` - Comprehensive unit test suite
 
 ---
 
@@ -114,6 +114,18 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
    python -m pip install --upgrade pip
    pip install -e ".[dev]"
    ```
+
+## ⚙️ Configuration
+
+The system can be configured through environment variables:
+
+- `HEARTBEAT_INTERVAL`: Heartbeat interval in milliseconds (default: 50)
+- `TIMEOUT_THRESHOLD`: Timeout threshold in milliseconds (default: 500)
+- `HEARTBEAT_HOST`: Host for heartbeat communication (default: localhost)
+- `HEARTBEAT_PORT`: Port for heartbeat communication (default: 9999)
+- `DEFAULT_DURATION`: Default system duration in seconds (default: 60)
+
+---
 
 ## 💻 Usage
 
@@ -146,16 +158,6 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 - HeartbeatMonitor automatically detects timeouts and coordinates restarts
 - ObstacleDetector sends heartbeats every 50ms with 1% random failure rate
 - System runs for specified duration (default 60 seconds) then gracefully shuts down
-
-### ⚙️ Configuration
-
-The system can be configured through environment variables:
-
-- `HEARTBEAT_INTERVAL`: Heartbeat interval in milliseconds (default: 50)
-- `TIMEOUT_THRESHOLD`: Timeout threshold in milliseconds (default: 500)
-- `HEARTBEAT_HOST`: Host for heartbeat communication (default: localhost)
-- `HEARTBEAT_PORT`: Port for heartbeat communication (default: 9999)
-- `DEFAULT_DURATION`: Default system duration in seconds (default: 60)
 
 ---
 
