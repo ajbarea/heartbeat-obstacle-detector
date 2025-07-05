@@ -1,4 +1,10 @@
-# sends heartbeats and simulates obstacle detection
+"""Obstacle detection system with heartbeat-based fault monitoring.
+
+This module implements an obstacle detector that sends periodic heartbeats to a monitor
+process while simulating obstacle detection. It uses UDP sockets for heartbeat communication
+and includes failure simulation for testing fault detection.
+"""
+
 import random
 import socket
 import time
@@ -6,41 +12,92 @@ from datetime import datetime
 
 
 class ObstacleDetector:
-    def __init__(self):
-        # Heartbeat sending interval in milliseconds (50ms as per spec)
-        self.heartbeat_interval = 50
-        # UDP socket for sending heartbeats
-        self.heartbeat_socket = None
-        # Monitor address and port for heartbeat destination
-        self.monitor_address = ("localhost", 9999)
+    """Simulates an obstacle detection system with heartbeat monitoring.
 
-    def run_detection_loop(self):
-        # Main loop that runs obstacle detection
-        # Periodically sends heartbeats during operation
-        # Simulates obstacle detection work
-        # Includes random failure simulation
-        pass
+    This class implements a fault-tolerant obstacle detector that periodically sends
+    heartbeat signals to a monitoring process while performing simulated obstacle
+    detection. It includes controlled failure simulation for testing purposes.
+
+    Attributes:
+        heartbeat_interval (int): Interval between heartbeats in milliseconds.
+        heartbeat_socket (socket.socket): UDP socket for sending heartbeat messages.
+        monitor_address (tuple): Tuple of (host, port) for the monitoring process.
+    """
+
+    def __init__(self):
+        """Initializes the obstacle detector with default configuration.
+
+        The detector is configured with a 50ms heartbeat interval and establishes
+        a UDP socket connection to the monitor process on localhost:9999.
+        """
+        self.heartbeat_interval = 50  # milliseconds
+        self.heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.monitor_address = ("localhost", 9999)
+        self._running = False
+
+    def run_detection_loop(self, max_iterations=None):
+        """Runs the main detection loop.
+
+        Executes the core functionality in a continuous loop:
+        1. Sends heartbeat signals
+        2. Performs obstacle detection
+        3. Simulates potential failures
+        4. Maintains the specified heartbeat interval
+
+        Args:
+            max_iterations (int, optional): Maximum number of loop iterations.
+                If None, runs indefinitely. Defaults to None.
+        """
+        self._running = True
+        iteration = 0
+
+        while self._running:
+            if max_iterations is not None:
+                if iteration >= max_iterations:
+                    break
+                iteration += 1
+
+            self.send_heartbeat()
+            self.detect_obstacles()
+            self.simulate_failure()
+            time.sleep(self.heartbeat_interval / 1000)
+
+    def stop(self):
+        """Stops the detection loop gracefully."""
+        self._running = False
 
     def send_heartbeat(self):
-        # Create timestamped heartbeat message
-        # Send UDP message to monitor process
-        # Log heartbeat transmission
-        pass
+        """Sends a timestamped heartbeat message to the monitor process.
+
+        Creates and transmits a heartbeat message containing the current timestamp
+        via UDP to the configured monitor address.
+        """
+        now = datetime.now()
+        message = now.strftime("%Y-%m-%d %H:%M:%S.%f")
+        self.heartbeat_socket.sendto(message.encode("utf-8"), self.monitor_address)
+        print(f"Heartbeat sent at {now}")
 
     def simulate_failure(self):
-        # Randomly decide whether to crash (simulate real-world failures)
-        # Exit process to simulate crash
-        # Used for testing fault detection
-        pass
+        """Simulates random process failures for testing.
+
+        Introduces a 1% chance of process termination on each call,
+        simulating unexpected crashes for fault tolerance testing.
+        """
+        if random.random() < 0.01:
+            print("Simulating a crash...")
+            exit(1)
 
     def detect_obstacles(self):
-        # Simulate obstacle detection processing
-        # Generate dummy distance measurements
-        # Simulate sensor data processing time
-        pass
+        """Simulates obstacle detection with random delays and distances.
+
+        Mimics a real obstacle detection process by introducing random processing
+        delays and generating random distance measurements.
+        """
+        time.sleep(random.uniform(0.01, 0.03))
+        distance = random.uniform(1, 100)
+        print(f"Detected obstacle at {distance:.2f} meters.")
 
 
 if __name__ == "__main__":
-    # Create detector instance
-    # Start detection loop
-    pass
+    detector = ObstacleDetector()
+    detector.run_detection_loop()
