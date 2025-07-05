@@ -51,7 +51,7 @@ jobs:
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-${{ matrix.os }}-${{ matrix.python-version }}
           path: coverage.xml
 
   sonarqube:
@@ -67,7 +67,7 @@ jobs:
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-ubuntu-latest-3.11
 
       # Set up Python to run tests and generate coverage
       - name: Set up Python 3.11
