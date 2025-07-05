@@ -213,13 +213,13 @@ This heartbeat-based fault detection system provides several key advantages:
 
 In our self-driving car POC, UDP’s connectionless “fire-and-forget” design lets the obstacle detector send sub-millisecond heartbeats without TCP style handshakes, retransmits, or blocking.
 
-**🚀 Ultra-Low Latency:** No connection setup or retransmit delays.  
+**🚀 Ultra-Low Latency:** No connection setup or retransmit delays.
 
-**📉 Minimal Overhead:** Lightweight datagrams cut bandwidth and CPU use.  
+**📉 Minimal Overhead:** Lightweight datagrams cut bandwidth and CPU use.
 
 **🔁 Stateless, Fire-and-Forget:** Missed packets merely indicate a failure—no blocking or retries.
 
-**🌡️ Fault-Tolerant by Design:** Occasional loss is acceptable; the next heartbeat arrives almost immediately.  
+**🌡️ Fault-Tolerant by Design:** Occasional loss is acceptable; the next heartbeat arrives almost immediately.
 
 **⚙️ Simple Implementation:** Plain UDP sockets—no connection management or session state.
 
