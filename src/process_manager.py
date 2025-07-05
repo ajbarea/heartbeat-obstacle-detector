@@ -46,7 +46,7 @@ class ProcessManager:
         self.monitor = None
         self.duration = duration
 
-    def start_process(self, cmd: List[str]) -> subprocess.Popen:
+    def start_process(self, cmd: List[str]) -> subprocess.Popen[Any]:
         """Launch a new worker process with the specified command.
 
         Creates and starts a new subprocess using the provided command and arguments.
@@ -67,7 +67,7 @@ class ProcessManager:
         self.worker_process = proc
         return proc
 
-    def restart_process(self) -> subprocess.Popen:
+    def restart_process(self) -> subprocess.Popen[Any]:
         """Restart the worker process with the stored command.
 
         Terminates the current worker process if it's running and launches a new
@@ -94,7 +94,7 @@ class ProcessManager:
         self.worker_process = proc
         return proc
 
-    def terminate_process(self, proc: subprocess.Popen) -> None:
+    def terminate_process(self, proc: subprocess.Popen[Any]) -> None:
         """Gracefully terminate a process with proper cleanup.
 
         Attempts graceful termination first using SIGTERM, then waits for the
