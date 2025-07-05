@@ -48,6 +48,8 @@ def test_initialization(process_manager):
     """
     assert process_manager.worker_cmd is None
     assert process_manager.worker_process is None
+    assert process_manager.monitor is None
+    assert process_manager.duration == 60
 
 
 @patch("subprocess.Popen")
@@ -404,3 +406,114 @@ class TestProcessManagerIntegration:
         # Test terminate with None process (should not crash)
         manager.worker_process = None
         assert manager.is_process_running() is False
+
+
+@patch("builtins.print")
+def test_start_system(mock_print, process_manager):
+    """Test the start_system method coordinates the entire system.
+
+    Verifies that start_system properly sets up the monitor and
+    delegates to the monitor's start_monitoring method.
+
+    Args:
+        mock_print (Mock): Mock for builtins.print.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    detector_cmd = ["python", "src/detector.py"]
+
+    with patch("src.process_manager.HeartbeatMonitor") as mock_monitor_class:
+        mock_monitor = Mock()
+        mock_monitor_class.return_value = mock_monitor
+
+        process_manager.start_system(detector_cmd)
+
+        # Verify monitor was created and configured
+        mock_monitor_class.assert_called_once_with(duration=60)
+        assert process_manager.monitor == mock_monitor
+        assert mock_monitor.process_manager == process_manager
+
+        # Verify start_monitoring was called
+        mock_monitor.start_monitoring.assert_called_once_with(detector_cmd)
+
+
+@patch("builtins.print")
+def test_shutdown_system(mock_print, process_manager):
+    """Test the shutdown_system method handles cleanup properly.
+
+    Verifies that shutdown_system terminates processes and closes sockets.
+
+    Args:
+        mock_print (Mock): Mock for builtins.print.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    # Set up mock worker process
+    mock_worker = Mock()
+    mock_worker.poll.return_value = None  # Process is running
+    process_manager.worker_process = mock_worker
+
+    # Set up mock monitor
+    mock_monitor = Mock()
+    mock_socket = Mock()
+    mock_monitor.heartbeat_socket = mock_socket
+    process_manager.monitor = mock_monitor
+
+    with patch.object(process_manager, "terminate_process") as mock_terminate:
+        process_manager.shutdown_system()
+
+        # Verify process was terminated
+        mock_terminate.assert_called_once_with(mock_worker)
+
+        # Verify socket was closed
+        mock_socket.close.assert_called_once()
+
+
+@patch("builtins.print")
+def test_shutdown_system_no_worker(mock_print, process_manager):
+    """Test shutdown_system when no worker process exists.
+
+    Verifies that shutdown_system handles the case where no worker
+    process is running without errors.
+
+    Args:
+        mock_print (Mock): Mock for builtins.print.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    # Set up mock monitor without worker
+    mock_monitor = Mock()
+    mock_socket = Mock()
+    mock_monitor.heartbeat_socket = mock_socket
+    process_manager.monitor = mock_monitor
+    process_manager.worker_process = None
+
+    with patch.object(process_manager, "terminate_process") as mock_terminate:
+        process_manager.shutdown_system()
+
+        # Verify terminate was not called since no worker
+        mock_terminate.assert_not_called()
+
+        # Verify socket was still closed
+        mock_socket.close.assert_called_once()
+
+
+@patch("builtins.print")
+def test_shutdown_system_no_monitor(mock_print, process_manager):
+    """Test shutdown_system when no monitor exists.
+
+    Verifies that shutdown_system handles the case where no monitor
+    has been set up without errors.
+
+    Args:
+        mock_print (Mock): Mock for builtins.print.
+        process_manager (ProcessManager): Fixture providing a manager.
+    """
+    # Set up mock worker process only
+    mock_worker = Mock()
+    mock_worker.poll.return_value = None  # Process is running
+    process_manager.worker_process = mock_worker
+    process_manager.monitor = None
+
+    with patch.object(process_manager, "terminate_process") as mock_terminate:
+        process_manager.shutdown_system()
+
+        # Verify process was terminated
+        mock_terminate.assert_called_once_with(mock_worker)

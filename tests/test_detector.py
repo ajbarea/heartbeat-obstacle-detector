@@ -52,12 +52,15 @@ def test_send_heartbeat(mocked_detector, mocker):
     mock_now = datetime(2025, 7, 5, 12, 0, 0)
     mock_datetime.now.return_value = mock_now
 
+    mock_print = mocker.patch("builtins.print")
+
     mocked_detector.send_heartbeat()
 
     expected_message = mock_now.strftime("%Y-%m-%d %H:%M:%S.%f").encode("utf-8")
     mocked_detector.heartbeat_socket.sendto.assert_called_once_with(
         expected_message, ("localhost", 9999)
     )
+    mock_print.assert_called_once_with(f"Heartbeat sent at {mock_now}")
 
 
 def test_run_detection_loop(mocked_detector, mocker):
@@ -98,10 +101,13 @@ def test_detect_obstacles(detector, mocker):
     mock_sleep = mocker.patch("src.detector.time.sleep")
     mock_random = mocker.patch("src.detector.random.uniform", return_value=42.0)
 
+    mock_print = mocker.patch("builtins.print")
+
     detector.detect_obstacles()
 
     mock_sleep.assert_called_once()
     assert mock_random.call_count == 2  # Sleep duration and distance calculation
+    mock_print.assert_called_once_with("Detected obstacle at 42.00 meters.")
 
 
 @pytest.mark.parametrize(
@@ -127,13 +133,15 @@ def test_simulate_failure(detector, mocker, random_value, should_exit):
     """
     mock_random = mocker.patch("src.detector.random.random", return_value=random_value)
 
-    if should_exit:
-        with pytest.raises(SystemExit):
-            detector.simulate_failure()
-    else:
-        detector.simulate_failure()  # Should not raise
+    mock_exit = mocker.patch("builtins.exit")
+
+    detector.simulate_failure()
 
     mock_random.assert_called_once()
+    if should_exit:
+        mock_exit.assert_called_once_with(1)
+    else:
+        mock_exit.assert_not_called()
 
 
 @pytest.mark.parametrize(

@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from process_manager import ProcessManager
 
 
@@ -132,7 +132,7 @@ class HeartbeatMonitor:
             print("Error: ProcessManager not available for restart.")
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     """Main entry point for standalone monitor usage.
 
     Note: In the new architecture, the ProcessManager is the main orchestrator.

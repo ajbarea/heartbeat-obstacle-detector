@@ -99,7 +99,7 @@ class ObstacleDetector:
         print(f"Detected obstacle at {distance:.2f} meters.")
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     """Main entry point for standalone detector usage.
 
     Note: In the new architecture, the ProcessManager is the main orchestrator.

@@ -169,7 +169,7 @@ class ProcessManager:
         print("System shutdown completed.")
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover
     """Main entry point for the heartbeat monitoring system.
 
     Creates and starts the complete system with default configuration.
