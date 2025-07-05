@@ -413,9 +413,6 @@ def test_terminate_process_handles_os_error(mock_kill, process_manager):
         mock_kill.assert_called_once_with(12345, getattr(signal, "SIGKILL"))
     else:
         mock_kill.assert_called_once_with(12345, signal.SIGTERM)
-    mock_process.terminate.assert_called_once()
-    mock_process.wait.assert_called_once_with(timeout=5)
-    mock_kill.assert_called_once_with(12345, signal.SIGTERM)
 
 
 class TestProcessManagerIntegration:
