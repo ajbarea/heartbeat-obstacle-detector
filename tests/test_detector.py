@@ -52,7 +52,7 @@ def test_send_heartbeat(mocked_detector, mocker):
     mock_now = datetime(2025, 7, 5, 12, 0, 0)
     mock_datetime.now.return_value = mock_now
 
-    mock_print = mocker.patch("builtins.print")
+    mock_logger = mocker.patch("src.detector.logger")
 
     mocked_detector.send_heartbeat()
 
@@ -60,7 +60,7 @@ def test_send_heartbeat(mocked_detector, mocker):
     mocked_detector.heartbeat_socket.sendto.assert_called_once_with(
         expected_message, ("localhost", 9999)
     )
-    mock_print.assert_called_once_with(f"Heartbeat sent at {mock_now}")
+    mock_logger.info.assert_called_once_with(f"Heartbeat sent at {mock_now}")
 
 
 def test_run_detection_loop(mocked_detector, mocker):
@@ -101,13 +101,13 @@ def test_detect_obstacles(detector, mocker):
     mock_sleep = mocker.patch("src.detector.time.sleep")
     mock_random = mocker.patch("src.detector.random.uniform", return_value=42.0)
 
-    mock_print = mocker.patch("builtins.print")
+    mock_logger = mocker.patch("src.detector.logger")
 
     detector.detect_obstacles()
 
     mock_sleep.assert_called_once()
     assert mock_random.call_count == 2  # Sleep duration and distance calculation
-    mock_print.assert_called_once_with("Detected obstacle at 42.00 meters.")
+    mock_logger.info.assert_called_once_with("Detected obstacle at 42.00 meters.")
 
 
 @pytest.mark.parametrize(

@@ -8,6 +8,7 @@ ObstacleDetector worker process for fault-tolerant obstacle detection.
 import subprocess
 from typing import Any, List, Optional
 
+from config import DEFAULT_DURATION
 from monitor import HeartbeatMonitor
 
 
@@ -30,8 +31,8 @@ class ProcessManager:
     monitor: Optional[HeartbeatMonitor]
     duration: int
 
-    def __init__(self, duration: int = 60) -> None:
-        """Initialize the process manager.
+    def __init__(self, duration: Optional[int] = None) -> None:
+        """Initialize the process manager with optional custom duration.
 
         Args:
             duration: Total system runtime duration in seconds.
@@ -39,7 +40,7 @@ class ProcessManager:
         self.worker_cmd = None
         self.worker_process = None
         self.monitor = None
-        self.duration = duration
+        self.duration = duration or DEFAULT_DURATION
 
     def start_process(self, cmd: List[str]) -> subprocess.Popen[Any]:
         """Launch a new worker process.
@@ -97,12 +98,10 @@ class ProcessManager:
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 # Use subprocess.kill() for safe forceful termination
-                # This is safer than os.kill() as it validates process ownership
                 try:
                     proc.kill()
                     proc.wait(timeout=2)  # Give it a moment to cleanup
                 except (OSError, subprocess.TimeoutExpired):
-                    # Process already terminated or cleanup timeout - ignore
                     pass
 
     def is_process_running(self) -> bool:

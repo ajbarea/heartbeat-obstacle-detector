@@ -95,7 +95,7 @@ def test_initialization_custom_duration(duration):
         assert monitor.duration == duration
 
 
-def test_receive_heartbeat_success(monitor_with_mocks):
+def test_receive_heartbeat_success(monitor_with_mocks, mocker):
     """Test successful heartbeat reception and timestamp update.
 
     Verifies that heartbeat messages are properly received and that
@@ -106,8 +106,9 @@ def test_receive_heartbeat_success(monitor_with_mocks):
     """
     mock_socket = monitor_with_mocks.heartbeat_socket
     mock_socket.recvfrom.return_value = (b"heartbeat", ("127.0.0.1", 5000))
+    mock_logger = mocker.patch("src.monitor.logger")
 
-    with patch("src.monitor.datetime") as mock_datetime, patch("builtins.print"):
+    with patch("src.monitor.datetime") as mock_datetime:
         mock_now = datetime(2025, 7, 5, 12, 0, 0)
         mock_datetime.now.return_value = mock_now
 
@@ -115,6 +116,7 @@ def test_receive_heartbeat_success(monitor_with_mocks):
 
         assert monitor_with_mocks.last_heartbeat == mock_now
         mock_socket.recvfrom.assert_called_once_with(1024)
+        mock_logger.info.assert_called_once_with(f"Heartbeat received at {mock_now}")
 
 
 def test_receive_heartbeat_socket_error(monitor_with_mocks):
@@ -215,15 +217,16 @@ def test_check_timeout_various_delays(
     assert result == expected_timeout
 
 
-def test_restart_process(monitor_with_mocks):
+def test_restart_process(monitor_with_mocks, mocker):
     """Tests process restart functionality.
 
     Args:
         monitor_with_mocks: HeartbeatMonitor with mocked dependencies.
     """
     mock_pm = monitor_with_mocks.process_manager
+    mock_logger = mocker.patch("src.monitor.logger")
 
-    with patch("src.monitor.datetime") as mock_datetime, patch("builtins.print"):
+    with patch("src.monitor.datetime") as mock_datetime:
         mock_now = datetime(2025, 7, 5, 12, 0, 0)
         mock_datetime.now.return_value = mock_now
 
@@ -231,32 +234,36 @@ def test_restart_process(monitor_with_mocks):
 
         mock_pm.restart_process.assert_called_once()
         assert monitor_with_mocks.last_heartbeat == mock_now
+        mock_logger.info.assert_called_once_with(
+            "Process restarted and heartbeat tracking reset."
+        )
 
 
-def test_restart_process_no_process_manager():
+def test_restart_process_no_process_manager(mocker):
     """Test restart_process when process_manager is None.
 
     Verifies that the restart_process method handles the case where
     process_manager is None by printing an error message without crashing.
     """
     mock_socket = Mock()
-    with patch("src.monitor.socket.socket", return_value=mock_socket), patch(
-        "builtins.print"
-    ) as mock_print:
+    mock_logger = mocker.patch("src.monitor.logger")
+    with patch("src.monitor.socket.socket", return_value=mock_socket):
         monitor = HeartbeatMonitor()
         monitor.process_manager = None  # Explicitly set to None
 
         monitor.restart_process()
 
         # Should print error message
-        mock_print.assert_called_once_with(
+        mock_logger.error.assert_called_once_with(
             "Error: ProcessManager not available for restart."
         )
 
 
 @patch("src.monitor.time.sleep")
 @patch("src.monitor.time.time")
-def test_start_monitoring_duration_reached(mock_time, mock_sleep, monitor_with_mocks):
+def test_start_monitoring_duration_reached(
+    mock_time, mock_sleep, monitor_with_mocks, mocker
+):
     """Tests start_monitoring when duration is reached.
 
     Args:
@@ -266,11 +273,12 @@ def test_start_monitoring_duration_reached(mock_time, mock_sleep, monitor_with_m
     """
     mock_pm = monitor_with_mocks.process_manager
     cmd = ["python", "test.py"]
+    mock_logger = mocker.patch("src.monitor.logger")
 
     # Mock time progression: start=0, first check=0, second check=65 (exceeds duration=60)
     mock_time.side_effect = [0, 0, 65]
 
-    with patch("src.monitor.datetime") as mock_datetime, patch("builtins.print"):
+    with patch("src.monitor.datetime") as mock_datetime:
         mock_now = datetime(2025, 7, 5, 12, 0, 0)
         mock_datetime.now.return_value = mock_now
 
@@ -283,11 +291,14 @@ def test_start_monitoring_duration_reached(mock_time, mock_sleep, monitor_with_m
     mock_pm.shutdown_system.assert_called_once()
     assert monitor_with_mocks.last_heartbeat == mock_now
     assert monitor_with_mocks.start_time == 0
+    mock_logger.info.assert_called_with("Monitoring duration reached. Shutting down.")
 
 
 @patch("src.monitor.time.sleep")
 @patch("src.monitor.time.time")
-def test_start_monitoring_with_timeout(mock_time, mock_sleep, monitor_with_mocks):
+def test_start_monitoring_with_timeout(
+    mock_time, mock_sleep, monitor_with_mocks, mocker
+):
     """Tests start_monitoring when timeout is detected.
 
     Args:
@@ -297,11 +308,12 @@ def test_start_monitoring_with_timeout(mock_time, mock_sleep, monitor_with_mocks
     """
     mock_pm = monitor_with_mocks.process_manager
     cmd = ["python", "test.py"]
+    mocker.patch("src.monitor.logger")
 
     # Mock time to stay within duration
     mock_time.side_effect = [0, 0, 30, 65]  # Last value triggers duration exit
 
-    with patch("src.monitor.datetime") as mock_datetime, patch("builtins.print"):
+    with patch("src.monitor.datetime") as mock_datetime:
         mock_now = datetime(2025, 7, 5, 12, 0, 0)
         mock_datetime.now.return_value = mock_now
 
@@ -376,7 +388,7 @@ class TestHeartbeatMonitorIntegration:
         with patch("src.monitor.socket.socket", return_value=mock_socket):
             return HeartbeatMonitor()
 
-    def test_heartbeat_reception_workflow(self, monitor):
+    def test_heartbeat_reception_workflow(self, monitor, mocker):
         """Tests the complete heartbeat reception workflow.
 
         Args:
@@ -385,6 +397,7 @@ class TestHeartbeatMonitorIntegration:
         # Test initial state
         assert monitor.last_heartbeat is None
         assert monitor.check_timeout() is False
+        mock_logger = mocker.patch("src.monitor.logger")
 
         # Simulate receiving heartbeat
         monitor.heartbeat_socket.recvfrom.return_value = (
@@ -392,7 +405,7 @@ class TestHeartbeatMonitorIntegration:
             ("127.0.0.1", 5000),
         )
 
-        with patch("src.monitor.datetime") as mock_datetime, patch("builtins.print"):
+        with patch("src.monitor.datetime") as mock_datetime:
             mock_now = datetime(2025, 7, 5, 12, 0, 0)
             mock_datetime.now.return_value = mock_now
 
@@ -401,8 +414,11 @@ class TestHeartbeatMonitorIntegration:
             # Verify heartbeat was processed
             assert monitor.last_heartbeat == mock_now
             assert monitor.check_timeout() is False
+            mock_logger.info.assert_called_once_with(
+                f"Heartbeat received at {mock_now}"
+            )
 
-    def test_timeout_detection_workflow(self, monitor):
+    def test_timeout_detection_workflow(self, monitor, mocker):
         """Tests timeout detection and recovery workflow.
 
         Args:
@@ -411,6 +427,7 @@ class TestHeartbeatMonitorIntegration:
         # Set up old heartbeat
         old_time = datetime.now() - timedelta(seconds=1)
         monitor.last_heartbeat = old_time
+        mock_logger = mocker.patch("src.monitor.logger")
 
         # Should detect timeout
         assert monitor.check_timeout() is True
@@ -420,7 +437,7 @@ class TestHeartbeatMonitorIntegration:
         monitor.process_manager = mock_pm
 
         # Simulate restart process
-        with patch("src.monitor.datetime") as mock_datetime, patch("builtins.print"):
+        with patch("src.monitor.datetime") as mock_datetime:
             new_time = datetime.now()
             mock_datetime.now.return_value = new_time
 
@@ -430,6 +447,9 @@ class TestHeartbeatMonitorIntegration:
             assert monitor.last_heartbeat == new_time
             assert monitor.check_timeout() is False
             mock_pm.restart_process.assert_called_once()
+            mock_logger.info.assert_called_once_with(
+                "Process restarted and heartbeat tracking reset."
+            )
 
     def test_socket_error_handling(self, monitor):
         """Tests robust error handling for socket operations.

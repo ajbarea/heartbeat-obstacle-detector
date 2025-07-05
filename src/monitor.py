@@ -10,8 +10,13 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
+from config import DEFAULT_DURATION, HEARTBEAT_PORT, TIMEOUT_THRESHOLD
+from logger import get_logger
+
 if TYPE_CHECKING:  # pragma: no cover
     from process_manager import ProcessManager
+
+logger = get_logger(__name__)
 
 
 class HeartbeatMonitor:
@@ -47,13 +52,13 @@ class HeartbeatMonitor:
         Args:
             duration (int): Total monitoring duration in seconds. Defaults to 60.
         """
-        self.timeout_threshold = 500  # Timeout threshold in milliseconds
+        self.timeout_threshold = TIMEOUT_THRESHOLD  # Timeout threshold in milliseconds
         self.last_heartbeat = None
         self.heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.heartbeat_socket.bind(("", 9999))
+        self.heartbeat_socket.bind(("", HEARTBEAT_PORT))
         self.heartbeat_socket.setblocking(False)
-        self.process_manager = None  # Set by the orchestrator
-        self.duration = duration
+        self.process_manager = None
+        self.duration = duration or DEFAULT_DURATION
         self.start_time = None
 
     def start_monitoring(self, cmd: List[str]) -> None:
@@ -77,14 +82,13 @@ class HeartbeatMonitor:
 
         while True:
             if time.time() - self.start_time > self.duration:
-                print("Monitoring duration reached. Shutting down.")
-                # Let the ProcessManager handle cleanup
+                logger.info("Monitoring duration reached. Shutting down.")
                 self.process_manager.shutdown_system()
                 break
 
             self.receive_heartbeat()
             if self.check_timeout():
-                print("Heartbeat timeout detected. Restarting process...")
+                logger.warning("Heartbeat timeout detected. Restarting process...")
                 self.restart_process()
             time.sleep(0.1)
 
@@ -98,7 +102,7 @@ class HeartbeatMonitor:
         try:
             _, _ = self.heartbeat_socket.recvfrom(1024)
             self.last_heartbeat = datetime.now()
-            print(f"Heartbeat received at {self.last_heartbeat}")
+            logger.info(f"Heartbeat received at {self.last_heartbeat}")
         except socket.error:
             pass
 
@@ -127,9 +131,9 @@ class HeartbeatMonitor:
         if self.process_manager:
             self.process_manager.restart_process()
             self.last_heartbeat = datetime.now()
-            print("Process restarted and heartbeat tracking reset.")
+            logger.info("Process restarted and heartbeat tracking reset.")
         else:
-            print("Error: ProcessManager not available for restart.")
+            logger.error("Error: ProcessManager not available for restart.")
 
 
 def main() -> None:  # pragma: no cover
@@ -138,10 +142,11 @@ def main() -> None:  # pragma: no cover
     Note: In the new architecture, the ProcessManager is the main orchestrator.
     For full system orchestration, use the ProcessManager directly.
     """
-    print("Warning: Running HeartbeatMonitor in standalone mode.")
-    print("For full system orchestration, use 'python src/process_manager.py' instead.")
+    logger.warning("Warning: Running HeartbeatMonitor in standalone mode.")
+    logger.info(
+        "For full system orchestration, use 'python src/process_manager.py' instead."
+    )
 
-    # Backward compatibility - create a simple ProcessManager
     from process_manager import ProcessManager
 
     monitor = HeartbeatMonitor(duration=10)

@@ -11,6 +11,11 @@ import time
 from datetime import datetime
 from typing import Optional
 
+from config import HEARTBEAT_HOST, HEARTBEAT_INTERVAL, HEARTBEAT_PORT
+from logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class ObstacleDetector:
     """Simulates an obstacle detection system with heartbeat monitoring.
@@ -31,9 +36,9 @@ class ObstacleDetector:
         The detector is configured with a 50ms heartbeat interval and establishes
         a UDP socket connection to the monitor process on localhost:9999.
         """
-        self.heartbeat_interval = 50  # milliseconds
+        self.heartbeat_interval = HEARTBEAT_INTERVAL  # milliseconds
         self.heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.monitor_address = ("localhost", 9999)
+        self.monitor_address = (HEARTBEAT_HOST, HEARTBEAT_PORT)
         self._running = False
 
     def run_detection_loop(self, max_iterations: Optional[int] = None) -> None:
@@ -76,7 +81,7 @@ class ObstacleDetector:
         now = datetime.now()
         message = now.strftime("%Y-%m-%d %H:%M:%S.%f")
         self.heartbeat_socket.sendto(message.encode("utf-8"), self.monitor_address)
-        print(f"Heartbeat sent at {now}")
+        logger.info(f"Heartbeat sent at {now}")
 
     def simulate_failure(self) -> None:
         """Simulates random process failures for testing.
@@ -85,7 +90,7 @@ class ObstacleDetector:
         simulating unexpected crashes for fault tolerance testing.
         """
         if random.random() < 0.01:
-            print("Simulating a crash...")
+            logger.warning("Simulating a crash...")
             exit(1)
 
     def detect_obstacles(self) -> None:
@@ -96,7 +101,7 @@ class ObstacleDetector:
         """
         time.sleep(random.uniform(0.01, 0.03))
         distance = random.uniform(1, 100)
-        print(f"Detected obstacle at {distance:.2f} meters.")
+        logger.info(f"Detected obstacle at {distance:.2f} meters.")
 
 
 def main() -> None:  # pragma: no cover
@@ -105,18 +110,20 @@ def main() -> None:  # pragma: no cover
     Note: In the new architecture, the ProcessManager is the main orchestrator.
     For full system orchestration, use the ProcessManager directly.
     """
-    print("Starting ObstacleDetector in standalone mode...")
-    print("For full system orchestration, use 'python src/process_manager.py' instead.")
+    logger.info("Starting ObstacleDetector in standalone mode...")
+    logger.info(
+        "For full system orchestration, use 'python src/process_manager.py' instead."
+    )
 
     detector = ObstacleDetector()
 
     try:
         detector.run_detection_loop()
     except KeyboardInterrupt:
-        print("\nReceived interrupt signal. Stopping detector...")
+        logger.info("\nReceived interrupt signal. Stopping detector...")
         detector.stop()
     except Exception as e:
-        print(f"Detector error: {e}")
+        logger.error(f"Detector error: {e}")
         detector.stop()
 
 
