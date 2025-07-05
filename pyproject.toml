@@ -35,16 +35,13 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.6.0",
+    "pre-commit>=3.0.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ajbarea/heartbeat-obstacle-detector"
 Repository = "https://github.com/ajbarea/heartbeat-obstacle-detector.git"
 Issues = "https://github.com/ajbarea/heartbeat-obstacle-detector/issues"
-
-[project.scripts]
-heartbeat-monitor = "src.monitor:main"
-obstacle-detector = "src.detector:main"
 
 # Tool configurations
 [tool.black]
@@ -78,7 +75,7 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
-files = ["src/detector.py", "src/monitor.py", "src/process_manager.py"]
+files = ["heartbeat_obstacle_detector/detector.py", "heartbeat_obstacle_detector/monitor.py", "heartbeat_obstacle_detector/process_manager.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

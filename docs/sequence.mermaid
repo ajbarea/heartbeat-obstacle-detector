@@ -28,21 +28,23 @@ config:
     fillType7: '#FFF8E1'
 ---
 sequenceDiagram
-    participant M as HeartbeatMonitor
     participant P as ProcessManager
+    participant M as HeartbeatMonitor
     participant W as ObstacleDetector
 
-    Note over M,P: Initialization
-    activate M
-    M->>P: start_process(["python", "detector.py"])
+    Note over P,M: System Initialization
     activate P
-    P->>W: launch
+    P->>M: create HeartbeatMonitor()
+    activate M
+    M-->>P: monitor service ready
+    P->>M: set process_manager reference
+    P->>M: start_monitoring(["python", "detector.py"])
+    M->>P: start_process(["python", "detector.py"])
+    P->>W: launch subprocess
     activate W
-    W-->>P: acknowledgment
-    deactivate W
-    P-->>M: started successfully
+    W-->>P: process started
+    P-->>M: detector launched
     deactivate P
-    deactivate M
 
     loop Every 50 ms
         activate W
@@ -59,16 +61,27 @@ sequenceDiagram
     end
 
     alt Timeout (> 500 ms)
-        activate M
         M->>M: check_timeout()
         Note right of M: timeout detected
         M->>P: restart_process()
         activate P
-        P->>W: launch
-        activate W
-        W-->>P: acknowledgment
+        P->>W: terminate old process
         deactivate W
+        P->>W: launch new process
+        activate W
+        W-->>P: process started
         P-->>M: restarted successfully
         deactivate P
+        Note right of M: heartbeat tracking reset
+    end
+
+    alt System Shutdown
+        activate P
+        P->>P: shutdown_system()
+        P->>W: terminate process
+        deactivate W
+        P->>M: close socket
         deactivate M
+        Note right of P: system shutdown complete
+        deactivate P
     end

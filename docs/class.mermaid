@@ -32,7 +32,7 @@ classDiagram
         - timeout_threshold: int
         - last_heartbeat: Optional[datetime]
         - heartbeat_socket: socket
-        - process_manager: ProcessManager
+        - process_manager: Optional[ProcessManager]
         - duration: int
         - start_time: Optional[float]
         + start_monitoring(cmd: List[str]): void
@@ -44,10 +44,14 @@ classDiagram
     class ProcessManager {
         - worker_cmd: Optional[List[str]]
         - worker_process: Optional[subprocess.Popen]
+        - monitor: Optional[HeartbeatMonitor]
+        - duration: int
         + start_process(cmd: List[str]): subprocess.Popen
         + restart_process(): subprocess.Popen
         + terminate_process(proc: subprocess.Popen): void
         + is_process_running(): bool
+        + start_system(detector_cmd: List[str]): void
+        + shutdown_system(): void
     }
 
     class ObstacleDetector {
@@ -62,6 +66,7 @@ classDiagram
         + stop(): void
     }
 
-    HeartbeatMonitor ..> ProcessManager : uses
+    ProcessManager --> HeartbeatMonitor : orchestrates
     ProcessManager --> ObstacleDetector : manages
     ObstacleDetector --> HeartbeatMonitor : sendHeartbeat
+    HeartbeatMonitor ..> ProcessManager : notifies

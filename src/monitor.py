@@ -1,31 +1,31 @@
-"""Heartbeat-based monitoring and management system for detector processes.
+"""Heartbeat monitoring service for detector processes.
 
-This module implements a robust monitoring system that tracks UDP heartbeat signals
-from detector processes and automatically restarts them when heartbeats are missed.
-It provides fault tolerance through continuous monitoring and process lifecycle management.
+This module implements a monitoring service that tracks UDP heartbeat signals
+from detector processes and coordinates with the ProcessManager for fault recovery.
+It focuses specifically on heartbeat detection and timeout management.
 """
 
 import socket
 import time
 from datetime import datetime
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from process_manager import ProcessManager
+if TYPE_CHECKING:
+    from process_manager import ProcessManager
 
 
 class HeartbeatMonitor:
-    """Monitors and manages detector processes via heartbeat signals.
+    """Heartbeat monitoring service for detector processes.
 
-    This class implements a fault-tolerant monitoring system that listens for UDP
-    heartbeat messages from detector processes. When heartbeats are missed beyond
-    a configured timeout threshold, it automatically restarts the monitored process
-    to ensure continuous operation.
+    This class implements a monitoring service that listens for UDP heartbeat messages
+    from detector processes and coordinates with the ProcessManager for fault recovery.
+    It focuses on heartbeat detection and timeout management as a service component.
 
     Attributes:
         timeout_threshold (int): Maximum time in milliseconds to wait for heartbeat.
         last_heartbeat (datetime): Timestamp of the last received heartbeat.
         heartbeat_socket (socket.socket): UDP socket for receiving heartbeat messages.
-        process_manager (ProcessManager): Manager for the monitored process.
+        process_manager (ProcessManager): Reference to the main orchestrator.
         duration (int): Total monitoring duration in seconds.
         start_time (float): Timestamp when monitoring began.
     """
@@ -34,16 +34,15 @@ class HeartbeatMonitor:
     timeout_threshold: int
     last_heartbeat: Optional[datetime]
     heartbeat_socket: socket.socket
-    process_manager: ProcessManager
+    process_manager: Optional["ProcessManager"]
     duration: int
     start_time: Optional[float]
 
     def __init__(self, duration: int = 60) -> None:
-        """Initialize the heartbeat monitor with specified configuration.
+        """Initialize the heartbeat monitor service.
 
-        Sets up the UDP socket for receiving heartbeat messages, configures the
-        timeout threshold, and initializes the process manager for handling
-        detector process lifecycle operations.
+        Sets up the UDP socket for receiving heartbeat messages and configures the
+        timeout threshold. The ProcessManager reference is set by the orchestrator.
 
         Args:
             duration (int): Total monitoring duration in seconds. Defaults to 60.
@@ -53,20 +52,25 @@ class HeartbeatMonitor:
         self.heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.heartbeat_socket.bind(("", 9999))
         self.heartbeat_socket.setblocking(False)
-        self.process_manager = ProcessManager()
+        self.process_manager = None  # Set by the orchestrator
         self.duration = duration
         self.start_time = None
 
     def start_monitoring(self, cmd: List[str]) -> None:
         """Start the monitoring loop for the detector process.
 
-        Launches the detector process and begins continuous monitoring of heartbeat
-        signals. The monitoring loop runs for the specified duration, automatically
-        restarting the process when timeouts are detected.
+        Launches the detector process via the ProcessManager and begins continuous
+        monitoring of heartbeat signals. The monitoring loop runs for the specified
+        duration, coordinating with the ProcessManager for fault recovery.
 
         Args:
             cmd (List[str]): Command and arguments to start the detector process.
         """
+        if not self.process_manager:
+            raise ValueError(
+                "ProcessManager not set. Must be configured by orchestrator."
+            )
+
         self.process_manager.start_process(cmd)
         self.last_heartbeat = datetime.now()
         self.start_time = time.time()
@@ -74,10 +78,8 @@ class HeartbeatMonitor:
         while True:
             if time.time() - self.start_time > self.duration:
                 print("Monitoring duration reached. Shutting down.")
-                # Safely terminate only if worker process exists
-                proc = self.process_manager.worker_process
-                if proc:
-                    self.process_manager.terminate_process(proc)
+                # Let the ProcessManager handle cleanup
+                self.process_manager.shutdown_system()
                 break
 
             self.receive_heartbeat()
@@ -116,19 +118,39 @@ class HeartbeatMonitor:
         return False
 
     def restart_process(self) -> None:
-        """Restart the detector process and reset heartbeat tracking.
+        """Coordinate detector process restart with the ProcessManager.
 
-        Triggers a complete restart of the detector process through the process
-        manager and resets the heartbeat timestamp to begin fresh monitoring.
-        This method is called when a heartbeat timeout is detected.
+        Requests the ProcessManager to restart the detector process and resets
+        the heartbeat timestamp to begin fresh monitoring. This method is called
+        when a heartbeat timeout is detected.
         """
-        self.process_manager.restart_process()
-        self.last_heartbeat = datetime.now()
-        print("Process restarted and heartbeat tracking reset.")
+        if self.process_manager:
+            self.process_manager.restart_process()
+            self.last_heartbeat = datetime.now()
+            print("Process restarted and heartbeat tracking reset.")
+        else:
+            print("Error: ProcessManager not available for restart.")
+
+
+def main() -> None:
+    """Main entry point for standalone monitor usage.
+
+    Note: In the new architecture, the ProcessManager is the main orchestrator.
+    For full system orchestration, use the ProcessManager directly.
+    """
+    print("Warning: Running HeartbeatMonitor in standalone mode.")
+    print("For full system orchestration, use 'python src/process_manager.py' instead.")
+
+    # Backward compatibility - create a simple ProcessManager
+    from process_manager import ProcessManager
+
+    monitor = HeartbeatMonitor(duration=10)
+    manager = ProcessManager(duration=10)
+    monitor.process_manager = manager
+
+    detector_cmd = ["python", "src/detector.py"]
+    monitor.start_monitoring(detector_cmd)
 
 
 if __name__ == "__main__":
-    # Example usage
-    monitor = HeartbeatMonitor(duration=10)
-    detector_cmd = ["python", "src/detector.py"]
-    monitor.start_monitoring(detector_cmd)
+    main()

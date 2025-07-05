@@ -1,5 +1,9 @@
 # TODO
 
+- [ ] update test suite to pass after architecture refactor
+
+---
+
 - [ ] replace print statements with logging
 - [ ] centralized configuration (config.py or .env variables)
 - [ ] integration tests for monitor + process_manager + detector

@@ -99,6 +99,26 @@ class ObstacleDetector:
         print(f"Detected obstacle at {distance:.2f} meters.")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main entry point for standalone detector usage.
+
+    Note: In the new architecture, the ProcessManager is the main orchestrator.
+    For full system orchestration, use the ProcessManager directly.
+    """
+    print("Starting ObstacleDetector in standalone mode...")
+    print("For full system orchestration, use 'python src/process_manager.py' instead.")
+
     detector = ObstacleDetector()
-    detector.run_detection_loop()
+
+    try:
+        detector.run_detection_loop()
+    except KeyboardInterrupt:
+        print("\nReceived interrupt signal. Stopping detector...")
+        detector.stop()
+    except Exception as e:
+        print(f"Detector error: {e}")
+        detector.stop()
+
+
+if __name__ == "__main__":
+    main()
