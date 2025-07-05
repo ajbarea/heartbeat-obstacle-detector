@@ -1,3 +1,32 @@
+---
+config:
+  theme: 'base'
+  themeVariables:
+    primaryColor: '#E8F4FD'
+    primaryBorderColor: '#2196F3'
+    primaryTextColor: '#1565C0'
+    secondaryColor: '#F3E5F5'
+    secondaryBorderColor: '#9C27B0'
+    secondaryTextColor: '#6A1B9A'
+    tertiaryColor: '#E8F5E8'
+    tertiaryBorderColor: '#4CAF50'
+    tertiaryTextColor: '#2E7D32'
+    lineColor: '#424242'
+    background: '#FAFAFA'
+    textColor: '#212121'
+    nodeTextColor: '#1565C0'
+    edgeLabelBackground: '#FFFFFF'
+    clusterBkg: '#F5F5F5'
+    clusterBorder: '#BDBDBD'
+    fillType0: '#E3F2FD'
+    fillType1: '#F3E5F5'
+    fillType2: '#E8F5E8'
+    fillType3: '#FFF3E0'
+    fillType4: '#FCE4EC'
+    fillType5: '#F1F8E9'
+    fillType6: '#E0F2F1'
+    fillType7: '#FFF8E1'
+---
 sequenceDiagram
     participant M as HeartbeatMonitor
     participant P as ProcessManager
@@ -5,7 +34,7 @@ sequenceDiagram
 
     Note over M,P: Initialization
     activate M
-    M->>P: start_process("detector.py")
+    M->>P: start_process(["python", "detector.py"])
     activate P
     P->>W: launch
     activate W
@@ -33,7 +62,7 @@ sequenceDiagram
         activate M
         M->>M: check_timeout()
         Note right of M: timeout detected
-        M->>P: restart_process("detector.py")
+        M->>P: restart_process()
         activate P
         P->>W: launch
         activate W

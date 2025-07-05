@@ -1,5 +1,7 @@
 # 🚗💓 Heartbeat Obstacle Detector
 
+[![codecov](https://codecov.io/gh/ajbarea/heartbeat-obstacle-detector/graph/badge.svg?token=7HZoKzaPld)](https://codecov.io/gh/ajbarea/heartbeat-obstacle-detector) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ajbarea_heartbeat-obstacle-detector&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ajbarea_heartbeat-obstacle-detector)
+
 A proof-of-concept implementation of the **Heartbeat** architectural tactic for fault detection and recovery, applied to an obstacle detection module in a self-driving car case study.
 
 ---
@@ -23,9 +25,9 @@ A proof-of-concept implementation of the **Heartbeat** architectural tactic for 
 
 This repository contains three Python scripts:
 
-1. **🔍 src/detector.py**: Simulates an obstacle detection module that periodically sends heartbeat messages and randomly fails to mimic real-world crashes.
-2. **👁️ src/monitor.py**: Listens for heartbeat messages from `detector.py` and coordinates fault detection and recovery.
-3. **⚙️ src/process_manager.py**: Handles launching, monitoring, and restarting the detector process as part of the heartbeat fault detection system.
+1. **🔍 detector.py**: Simulates an obstacle detection module that periodically sends heartbeat messages and randomly fails to mimic real-world crashes.
+2. **👁️ monitor.py**: Listens for heartbeat messages from `detector.py` and coordinates fault detection and recovery.
+3. **⚙️ process_manager.py**: Handles launching, monitoring, and restarting the detector process as part of the heartbeat fault detection system.
 
 The purpose is to demonstrate how the Heartbeat tactic can detect faults and recover a critical sensing process in a distributed system.
 
@@ -76,20 +78,23 @@ config:
 classDiagram
     class HeartbeatMonitor {
         - timeout_threshold: int
-        - last_heartbeat: datetime
+        - last_heartbeat: Optional[datetime]
         - heartbeat_socket: socket
-        + start_monitoring(cmd: str): void
+        - process_manager: ProcessManager
+        - duration: int
+        - start_time: Optional[float]
+        + start_monitoring(cmd: List[str]): void
         + receive_heartbeat(): void
         + check_timeout(): bool
-        + restart_process(cmd: str): void
+        + restart_process(): void
     }
 
     class ProcessManager {
-        - worker_cmd: str
-        - worker_process: Process
-        + start_process(cmd: str): Process
-        + restart_process(cmd: str): Process
-        + terminate_process(proc: Process): void
+        - worker_cmd: Optional[List[str]]
+        - worker_process: Optional[subprocess.Popen]
+        + start_process(cmd: List[str]): subprocess.Popen
+        + restart_process(): subprocess.Popen
+        + terminate_process(proc: subprocess.Popen): void
         + is_process_running(): bool
     }
 
@@ -97,10 +102,12 @@ classDiagram
         - heartbeat_interval: int
         - heartbeat_socket: socket
         - monitor_address: tuple
-        + run_detection_loop(): void
+        - _running: bool
+        + run_detection_loop(max_iterations: Optional[int]): void
         + send_heartbeat(): void
         + simulate_failure(): void
         + detect_obstacles(): void
+        + stop(): void
     }
 
     HeartbeatMonitor ..> ProcessManager : uses
@@ -151,7 +158,7 @@ sequenceDiagram
 
     Note over M,P: Initialization
     activate M
-    M->>P: start_process("src/detector.py")
+    M->>P: start_process(["python", "detector.py"])
     activate P
     P->>W: launch
     activate W
@@ -179,7 +186,7 @@ sequenceDiagram
         activate M
         M->>M: check_timeout()
         Note right of M: timeout detected
-        M->>P: restart_process("src/detector.py")
+        M->>P: restart_process()
         activate P
         P->>W: launch
         activate W
@@ -227,9 +234,9 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
 
 ## 🔧 Components
 
-* 🔍 `src/detector.py`
-* 👁️ `src/monitor.py`
-* ⚙️ `src/process_manager.py`
+* 🔍 `detector.py`
+* 👁️ `monitor.py`
+* ⚙️ `process_manager.py`
 * 📦 `pyproject.toml`
 * `README.md`
 * 📁 `docs/` (Mermaid diagrams and documentation)
@@ -263,25 +270,92 @@ In our self-driving car POC, UDP’s connectionless “fire-and-forget” design
     python src/monitor.py
     ```
 
-2. The monitor will automatically launch the detector process and begin monitoring for heartbeats.
+2. Alternatively, you can run the detector standalone:
 
-3. Observe logs for heartbeat reception and any detector restarts.
+    ```bash
+    python src/detector.py
+    ```
+
+3. The monitor will automatically launch the detector process and begin monitoring for heartbeats.
+
+4. Observe logs for heartbeat reception and any detector restarts.
+
+### Code Examples
+
+**Basic Monitor Usage:**
+
+```python
+from src.monitor import HeartbeatMonitor
+
+# Create monitor with 30-second duration
+monitor = HeartbeatMonitor(duration=30)
+
+# Start monitoring the detector process
+detector_cmd = ["python", "src/detector.py"]
+monitor.start_monitoring(detector_cmd)
+```
+
+**Basic Detector Usage:**
+
+```python
+from src.detector import ObstacleDetector
+
+# Create and start detector
+detector = ObstacleDetector()
+
+# Run for 100 iterations then stop
+detector.run_detection_loop(max_iterations=100)
+
+# Or run indefinitely
+# detector.run_detection_loop()
+```
+
+**Process Manager Usage:**
+
+```python
+from src.process_manager import ProcessManager
+
+# Create process manager
+pm = ProcessManager()
+
+# Start a process
+process = pm.start_process(["python", "src/detector.py"])
+
+# Check if running
+if pm.is_process_running():
+    print("Process is running")
+
+# Restart the process
+pm.restart_process()
+
+# Terminate when done
+pm.terminate_process(process)
+```
 
 ## 📁 Project Structure
 
 ```text
 heartbeat-obstacle-detector/
 ├── src/
-│   ├── detector.py
-│   ├── monitor.py
-│   └── process_manager.py
+│   ├── detector.py                 # Obstacle detector with heartbeat
+│   ├── monitor.py                  # Heartbeat monitor and fault detector
+│   └── process_manager.py          # Process lifecycle management
 ├── tests/
-│   └── .gitkeep
+│   ├── test_detector.py           # Unit tests for detector
+│   ├── test_monitor.py            # Unit tests for monitor
+│   └── test_process_manager.py    # Unit tests for process manager
 ├── docs/
-│   ├── class.mermaid
-│   ├── sequence.mermaid
-│   └── Fault-Detection Using Heartbeat Tactic.pdf
-├── pyproject.toml
-├── README.md
-└── .gitignore
+│   ├── class.mermaid              # Class diagram source
+│   ├── sequence.mermaid           # Sequence diagram source
+│   └── software_architecture.md   # Detailed architecture docs
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions CI workflow
+├── htmlcov/                       # Coverage reports (generated)
+├── pyproject.toml                 # Project configuration and dependencies
+├── README.md                      # This file
+├── TODO.txt                       # Development todo list
+├── lint.sh                        # Linting script for pre-commit hooks
+├── .gitignore                     # Git ignore rules
+└── .pre-commit-config.yaml        # Pre-commit hooks configuration
 ```
