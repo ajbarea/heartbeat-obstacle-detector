@@ -27,21 +27,21 @@ class HeartbeatMonitor:
     It focuses on heartbeat detection and timeout management as a service component.
 
     Attributes:
-        timeout_threshold (int): Maximum time in milliseconds to wait for heartbeat.
-        last_heartbeat (datetime): Timestamp of the last received heartbeat.
-        heartbeat_socket (socket.socket): UDP socket for receiving heartbeat messages.
-        process_manager (ProcessManager): Reference to the main orchestrator.
-        duration (int): Total monitoring duration in seconds.
-        start_time (float): Timestamp when monitoring began.
+        _timeout_threshold (int): Maximum time in milliseconds to wait for heartbeat.
+        _last_heartbeat (datetime): Timestamp of the last received heartbeat.
+        _heartbeat_socket (socket.socket): UDP socket for receiving heartbeat messages.
+        _process_manager (ProcessManager): Reference to the main orchestrator.
+        _duration (int): Total monitoring duration in seconds.
+        _start_time (float): Timestamp when monitoring began.
     """
 
     # Type annotations for instance attributes
-    timeout_threshold: int
-    last_heartbeat: Optional[datetime]
-    heartbeat_socket: socket.socket
-    process_manager: Optional["ProcessManager"]
-    duration: int
-    start_time: Optional[float]
+    _timeout_threshold: int
+    _last_heartbeat: Optional[datetime]
+    _heartbeat_socket: socket.socket
+    _process_manager: Optional["ProcessManager"]
+    _duration: int
+    _start_time: Optional[float]
 
     def __init__(self, duration: int = 60) -> None:
         """Initialize the heartbeat monitor service.
@@ -52,14 +52,14 @@ class HeartbeatMonitor:
         Args:
             duration (int): Total monitoring duration in seconds. Defaults to 60.
         """
-        self.timeout_threshold = TIMEOUT_THRESHOLD  # Timeout threshold in milliseconds
-        self.last_heartbeat = None
-        self.heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.heartbeat_socket.bind(("", HEARTBEAT_PORT))
-        self.heartbeat_socket.setblocking(False)
-        self.process_manager = None
-        self.duration = duration or DEFAULT_DURATION
-        self.start_time = None
+        self._timeout_threshold = TIMEOUT_THRESHOLD  # Timeout threshold in milliseconds
+        self._last_heartbeat = None
+        self._heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._heartbeat_socket.bind(("", HEARTBEAT_PORT))
+        self._heartbeat_socket.setblocking(False)
+        self._process_manager = None
+        self._duration = duration or DEFAULT_DURATION
+        self._start_time = None
 
     def start_monitoring(self, cmd: List[str]) -> None:
         """Start the monitoring loop for the detector process.
@@ -71,19 +71,19 @@ class HeartbeatMonitor:
         Args:
             cmd (List[str]): Command and arguments to start the detector process.
         """
-        if not self.process_manager:
+        if not self._process_manager:
             raise ValueError(
                 "ProcessManager not set. Must be configured by orchestrator."
             )
 
-        self.process_manager.start_process(cmd)
-        self.last_heartbeat = datetime.now()
-        self.start_time = time.time()
+        self._process_manager.start_process(cmd)
+        self._last_heartbeat = datetime.now()
+        self._start_time = time.time()
 
         while True:
-            if time.time() - self.start_time > self.duration:
+            if time.time() - self._start_time > self._duration:
                 logger.info("Monitoring duration reached. Shutting down.")
-                self.process_manager.shutdown_system()
+                self._process_manager.shutdown_system()
                 break
 
             self.receive_heartbeat()
@@ -100,9 +100,9 @@ class HeartbeatMonitor:
         Uses non-blocking socket operations to avoid hanging the monitoring loop.
         """
         try:
-            _, _ = self.heartbeat_socket.recvfrom(1024)
-            self.last_heartbeat = datetime.now()
-            logger.info(f"Heartbeat received at {self.last_heartbeat}")
+            _, _ = self._heartbeat_socket.recvfrom(1024)
+            self._last_heartbeat = datetime.now()
+            logger.info(f"Heartbeat received at {self._last_heartbeat}")
         except socket.error:
             pass
 
@@ -116,9 +116,9 @@ class HeartbeatMonitor:
         Returns:
             bool: True if the timeout threshold has been exceeded, False otherwise.
         """
-        if self.last_heartbeat:
-            delta = datetime.now() - self.last_heartbeat
-            return (delta.total_seconds() * 1000) > self.timeout_threshold
+        if self._last_heartbeat:
+            delta = datetime.now() - self._last_heartbeat
+            return (delta.total_seconds() * 1000) > self._timeout_threshold
         return False
 
     def restart_process(self) -> None:
@@ -128,9 +128,9 @@ class HeartbeatMonitor:
         the heartbeat timestamp to begin fresh monitoring. This method is called
         when a heartbeat timeout is detected.
         """
-        if self.process_manager:
-            self.process_manager.restart_process()
-            self.last_heartbeat = datetime.now()
+        if self._process_manager:
+            self._process_manager.restart_process()
+            self._last_heartbeat = datetime.now()
             logger.info("Process restarted and heartbeat tracking reset.")
         else:
             logger.error("Error: ProcessManager not available for restart.")
@@ -151,7 +151,7 @@ def main() -> None:  # pragma: no cover
 
     monitor = HeartbeatMonitor(duration=10)
     manager = ProcessManager(duration=10)
-    monitor.process_manager = manager
+    monitor._process_manager = manager
 
     detector_cmd = ["python", "src/detector.py"]
     monitor.start_monitoring(detector_cmd)

@@ -23,16 +23,16 @@ class ProcessManager:
     fault-tolerant system lifecycle.
 
     Attributes:
-        worker_cmd: Command used to start the worker process.
-        worker_process: Reference to the current worker process.
-        monitor: The heartbeat monitoring service instance.
-        duration: Total system runtime duration in seconds.
+        _worker_cmd: Command used to start the worker process.
+        _worker_process: Reference to the current worker process.
+        _monitor: The heartbeat monitoring service instance.
+        _duration: Total system runtime duration in seconds.
     """
 
-    worker_cmd: Optional[List[str]]
-    worker_process: Optional[subprocess.Popen[Any]]
-    monitor: Optional[HeartbeatMonitor]
-    duration: int
+    _worker_cmd: Optional[List[str]]
+    _worker_process: Optional[subprocess.Popen[Any]]
+    _monitor: Optional[HeartbeatMonitor]
+    _duration: int
 
     def __init__(self, duration: Optional[int] = None) -> None:
         """Initialize the process manager with optional custom duration.
@@ -40,10 +40,10 @@ class ProcessManager:
         Args:
             duration: Total system runtime duration in seconds.
         """
-        self.worker_cmd = None
-        self.worker_process = None
-        self.monitor = None
-        self.duration = duration or DEFAULT_DURATION
+        self._worker_cmd = None
+        self._worker_process = None
+        self._monitor = None
+        self._duration = duration or DEFAULT_DURATION
 
     def start_process(self, cmd: List[str]) -> subprocess.Popen[Any]:
         """Launch a new worker process.
@@ -55,11 +55,11 @@ class ProcessManager:
             Reference to the started worker process.
         """
         logger.info(f"Starting worker process with command: {' '.join(cmd)}")
-        self.worker_cmd = cmd
+        self._worker_cmd = cmd
         proc = subprocess.Popen(
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        self.worker_process = proc
+        self._worker_process = proc
         return proc
 
     def restart_process(self) -> subprocess.Popen[Any]:
@@ -71,20 +71,20 @@ class ProcessManager:
         Raises:
             ValueError: If no command was previously stored via start_process().
         """
-        if not self.worker_cmd:
+        if not self._worker_cmd:
             raise ValueError("No command stored. Call start_process() first.")
 
-        if self.worker_process and self.is_process_running():
+        if self._worker_process and self.is_process_running():
             logger.info("Terminating existing worker process...")
-            self.terminate_process(self.worker_process)
+            self.terminate_process(self._worker_process)
 
         logger.info(
-            f"Restarting worker process with command: {' '.join(self.worker_cmd)}"
+            f"Restarting worker process with command: {' '.join(self._worker_cmd)}"
         )
         proc = subprocess.Popen(
-            self.worker_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            self._worker_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
-        self.worker_process = proc
+        self._worker_process = proc
         return proc
 
     def terminate_process(self, proc: subprocess.Popen[Any]) -> None:
@@ -114,9 +114,9 @@ class ProcessManager:
         Returns:
             True if the worker process exists and is running, False otherwise.
         """
-        if not self.worker_process:
+        if not self._worker_process:
             return False
-        return self.worker_process.poll() is None
+        return self._worker_process.poll() is None
 
     def start_system(self, detector_cmd: List[str]) -> None:
         """Start the complete heartbeat monitoring system.
@@ -128,11 +128,11 @@ class ProcessManager:
             detector_cmd: Command and arguments for the detector process.
         """
         logger.info("Starting heartbeat monitoring system...")
-        logger.info(f"System duration: {self.duration} seconds")
+        logger.info(f"System duration: {self._duration} seconds")
 
-        self.monitor = HeartbeatMonitor(duration=self.duration)
-        self.monitor.process_manager = self
-        self.monitor.start_monitoring(detector_cmd)
+        self._monitor = HeartbeatMonitor(duration=self._duration)
+        self._monitor._process_manager = self
+        self._monitor.start_monitoring(detector_cmd)
 
         logger.info("System shutdown completed.")
 
@@ -144,13 +144,13 @@ class ProcessManager:
         """
         logger.info("Shutting down system...")
 
-        if self.worker_process and self.is_process_running():
+        if self._worker_process and self.is_process_running():
             logger.info("Terminating detector process...")
-            self.terminate_process(self.worker_process)
+            self.terminate_process(self._worker_process)
 
-        if self.monitor and hasattr(self.monitor, "heartbeat_socket"):
+        if self._monitor and hasattr(self._monitor, "_heartbeat_socket"):
             logger.info("Closing monitor socket...")
-            self.monitor.heartbeat_socket.close()
+            self._monitor._heartbeat_socket.close()
 
         logger.info("System shutdown completed.")
 

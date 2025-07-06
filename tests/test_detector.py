@@ -34,7 +34,7 @@ def mocked_detector(mocker):
         ObstacleDetector: Configured detector instance with mocked socket.
     """
     detector = ObstacleDetector()
-    detector.heartbeat_socket = mocker.Mock(spec=socket.socket)
+    detector._heartbeat_socket = mocker.Mock(spec=socket.socket)
     return detector
 
 
@@ -57,7 +57,7 @@ def test_send_heartbeat(mocked_detector, mocker):
     mocked_detector.send_heartbeat()
 
     expected_message = mock_now.strftime("%Y-%m-%d %H:%M:%S.%f").encode("utf-8")
-    mocked_detector.heartbeat_socket.sendto.assert_called_once_with(
+    mocked_detector._heartbeat_socket.sendto.assert_called_once_with(
         expected_message, ("localhost", 9999)
     )
     mock_logger.info.assert_called_once_with(f"Heartbeat sent at {mock_now}")
@@ -82,7 +82,7 @@ def test_run_detection_loop(mocked_detector, mocker):
     mocked_detector.run_detection_loop(max_iterations=3)
 
     assert (
-        mocked_detector.heartbeat_socket.sendto.call_count == 3
+        mocked_detector._heartbeat_socket.sendto.call_count == 3
     ), "Should send 3 heartbeats"
     # Verify sleep was called for main loop intervals
     assert mock_sleep.call_count >= 3, "Should sleep at least 3 times for main loop"
@@ -147,9 +147,9 @@ def test_simulate_failure(detector, mocker, random_value, should_exit):
 @pytest.mark.parametrize(
     "attribute,expected_value,description",
     [
-        ("heartbeat_interval", 50, "Heartbeat interval should be 50 milliseconds"),
+        ("_heartbeat_interval", 50, "Heartbeat interval should be 50 milliseconds"),
         (
-            "monitor_address",
+            "_monitor_address",
             ("localhost", 9999),
             "Monitor address should be localhost:9999",
         ),
@@ -225,7 +225,7 @@ def test_stop_detection_loop(mocked_detector, mocker):
 
     assert not mocked_detector._running, "Loop should be stopped"
     assert (
-        mocked_detector.heartbeat_socket.sendto.call_count == 1
+        mocked_detector._heartbeat_socket.sendto.call_count == 1
     ), "Should send one heartbeat before stopping"
 
 
@@ -237,13 +237,13 @@ def test_detector_initialization():
     """
     detector = ObstacleDetector()
 
-    assert detector.heartbeat_interval == 50
-    assert detector.monitor_address == ("localhost", 9999)
+    assert detector._heartbeat_interval == 50
+    assert detector._monitor_address == ("localhost", 9999)
     assert detector._running is False
-    assert detector.heartbeat_socket is not None
+    assert detector._heartbeat_socket is not None
 
     # Clean up
-    detector.heartbeat_socket.close()
+    detector._heartbeat_socket.close()
 
 
 def test_stop_method():
@@ -260,4 +260,4 @@ def test_stop_method():
     assert detector._running is False
 
     # Clean up
-    detector.heartbeat_socket.close()
+    detector._heartbeat_socket.close()

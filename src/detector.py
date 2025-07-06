@@ -25,9 +25,9 @@ class ObstacleDetector:
     detection. It includes controlled failure simulation for testing purposes.
 
     Attributes:
-        heartbeat_interval (int): Interval between heartbeats in milliseconds.
-        heartbeat_socket (socket.socket): UDP socket for sending heartbeat messages.
-        monitor_address (tuple): Tuple of (host, port) for the monitoring process.
+        _heartbeat_interval (int): Interval between heartbeats in milliseconds.
+        _heartbeat_socket (socket.socket): UDP socket for sending heartbeat messages.
+        _monitor_address (tuple): Tuple of (host, port) for the monitoring process.
     """
 
     def __init__(self) -> None:
@@ -36,9 +36,9 @@ class ObstacleDetector:
         The detector is configured with a 50ms heartbeat interval and establishes
         a UDP socket connection to the monitor process on localhost:9999.
         """
-        self.heartbeat_interval = HEARTBEAT_INTERVAL  # milliseconds
-        self.heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.monitor_address = (HEARTBEAT_HOST, HEARTBEAT_PORT)
+        self._heartbeat_interval = HEARTBEAT_INTERVAL  # milliseconds
+        self._heartbeat_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._monitor_address = (HEARTBEAT_HOST, HEARTBEAT_PORT)
         self._running = False
 
     def run_detection_loop(self, max_iterations: Optional[int] = None) -> None:
@@ -66,7 +66,7 @@ class ObstacleDetector:
             self.send_heartbeat()
             self.detect_obstacles()
             self.simulate_failure()
-            time.sleep(self.heartbeat_interval / 1000)
+            time.sleep(self._heartbeat_interval / 1000)
 
     def stop(self) -> None:
         """Stops the detection loop gracefully."""
@@ -80,7 +80,7 @@ class ObstacleDetector:
         """
         now = datetime.now()
         message = now.strftime("%Y-%m-%d %H:%M:%S.%f")
-        self.heartbeat_socket.sendto(message.encode("utf-8"), self.monitor_address)
+        self._heartbeat_socket.sendto(message.encode("utf-8"), self._monitor_address)
         logger.info(f"Heartbeat sent at {now}")
 
     def simulate_failure(self) -> None:
