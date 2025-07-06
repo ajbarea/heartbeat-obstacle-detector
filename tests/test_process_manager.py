@@ -45,10 +45,10 @@ def test_initialization(process_manager):
     Args:
         process_manager (ProcessManager): Fixture providing a clean manager.
     """
-    assert process_manager.worker_cmd is None
-    assert process_manager.worker_process is None
-    assert process_manager.monitor is None
-    assert process_manager.duration == 60
+    assert process_manager._worker_cmd is None
+    assert process_manager._worker_process is None
+    assert process_manager._monitor is None
+    assert process_manager._duration == 60
 
 
 @patch("subprocess.Popen")
@@ -73,8 +73,8 @@ def test_start_process(mock_logger, mock_popen, process_manager, mock_process):
 
     result = process_manager.start_process(cmd)
 
-    assert process_manager.worker_cmd == cmd
-    assert process_manager.worker_process == mock_process
+    assert process_manager._worker_cmd == cmd
+    assert process_manager._worker_process == mock_process
     assert result == mock_process
     mock_popen.assert_called_once_with(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
@@ -161,13 +161,13 @@ def test_restart_process_no_existing_process(
         subprocess.Popen: The newly started mock process.
     """
     mock_popen.return_value = mock_process
-    process_manager.worker_cmd = ["python", "worker.py"]
-    process_manager.worker_process = None
+    process_manager._worker_cmd = ["python", "worker.py"]
+    process_manager._worker_process = None
 
     result = process_manager.restart_process()
 
     assert result == mock_process
-    assert process_manager.worker_process == mock_process
+    assert process_manager._worker_process == mock_process
     mock_popen.assert_called_once_with(
         ["python", "worker.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
@@ -196,8 +196,8 @@ def test_restart_process_with_running_process(mock_logger, mock_popen, process_m
     mock_new_process = Mock()
     mock_popen.return_value = mock_new_process
 
-    process_manager.worker_cmd = ["python", "worker.py"]
-    process_manager.worker_process = mock_old_process
+    process_manager._worker_cmd = ["python", "worker.py"]
+    process_manager._worker_process = mock_old_process
 
     with patch.object(
         process_manager, "is_process_running", return_value=True
@@ -205,7 +205,7 @@ def test_restart_process_with_running_process(mock_logger, mock_popen, process_m
         result = process_manager.restart_process()
 
         assert result == mock_new_process
-        assert process_manager.worker_process == mock_new_process
+        assert process_manager._worker_process == mock_new_process
         mock_terminate.assert_called_once_with(mock_old_process)
         mock_logger.info.assert_any_call("Terminating existing worker process...")
         mock_logger.info.assert_any_call(
@@ -237,7 +237,7 @@ def test_is_process_running(
         expected_result (bool): Expected result from is_process_running().
     """
     mock_process.poll.return_value = poll_return
-    process_manager.worker_process = mock_process
+    process_manager._worker_process = mock_process
 
     result = process_manager.is_process_running()
 
@@ -474,14 +474,14 @@ class TestProcessManagerIntegration:
         # Start process
         result1 = manager.start_process(cmd)
         assert result1 == mock_process1
-        assert manager.worker_process == mock_process1
-        assert manager.worker_cmd == cmd
+        assert manager._worker_process == mock_process1
+        assert manager._worker_cmd == cmd
 
         # Restart process
         with patch.object(manager, "terminate_process") as mock_terminate:
             result2 = manager.restart_process()
             assert result2 == mock_process2
-            assert manager.worker_process == mock_process2
+            assert manager._worker_process == mock_process2
             mock_terminate.assert_called_once_with(mock_process1)
 
         # Verify log calls
@@ -536,8 +536,8 @@ def test_start_system(mock_logger, process_manager):
 
         # Verify monitor was created and configured
         mock_monitor_class.assert_called_once_with(duration=60)
-        assert process_manager.monitor == mock_monitor
-        assert mock_monitor.process_manager == process_manager
+        assert process_manager._monitor == mock_monitor
+        assert mock_monitor._process_manager == process_manager
 
         # Verify start_monitoring was called
         mock_monitor.start_monitoring.assert_called_once_with(detector_cmd)
@@ -556,13 +556,13 @@ def test_shutdown_system(mock_logger, process_manager):
     # Set up mock worker process
     mock_worker = Mock()
     mock_worker.poll.return_value = None  # Process is running
-    process_manager.worker_process = mock_worker
+    process_manager._worker_process = mock_worker
 
     # Set up mock monitor
     mock_monitor = Mock()
     mock_socket = Mock()
-    mock_monitor.heartbeat_socket = mock_socket
-    process_manager.monitor = mock_monitor
+    mock_monitor._heartbeat_socket = mock_socket
+    process_manager._monitor = mock_monitor
 
     with patch.object(process_manager, "terminate_process") as mock_terminate:
         process_manager.shutdown_system()
@@ -588,9 +588,9 @@ def test_shutdown_system_no_worker(mock_logger, process_manager):
     # Set up mock monitor without worker
     mock_monitor = Mock()
     mock_socket = Mock()
-    mock_monitor.heartbeat_socket = mock_socket
-    process_manager.monitor = mock_monitor
-    process_manager.worker_process = None
+    mock_monitor._heartbeat_socket = mock_socket
+    process_manager._monitor = mock_monitor
+    process_manager._worker_process = None
 
     with patch.object(process_manager, "terminate_process") as mock_terminate:
         process_manager.shutdown_system()
@@ -616,8 +616,8 @@ def test_shutdown_system_no_monitor(mock_logger, process_manager):
     # Set up mock worker process only
     mock_worker = Mock()
     mock_worker.poll.return_value = None  # Process is running
-    process_manager.worker_process = mock_worker
-    process_manager.monitor = None
+    process_manager._worker_process = mock_worker
+    process_manager._monitor = None
 
     with patch.object(process_manager, "terminate_process") as mock_terminate:
         process_manager.shutdown_system()
