@@ -85,8 +85,8 @@ classDiagram
     }
 
     ProcessManager --> HeartbeatMonitor : orchestrates
-    ProcessManager --> ObstacleDetector : manages
-    ObstacleDetector --> HeartbeatMonitor : sendHeartbeat
+    ProcessManager ..> ObstacleDetector : manages subprocess
+    ObstacleDetector ..> HeartbeatMonitor : UDP heartbeat
     HeartbeatMonitor ..> ProcessManager : notifies
 
 ```
