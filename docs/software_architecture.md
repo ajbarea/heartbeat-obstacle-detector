@@ -123,7 +123,7 @@ sequenceDiagram
         Note right of W: Simulated crash (1% chance)<br>No more heartbeats
     end
 
-    alt Timeout > 500ms
+    alt Timeout > 500 ms
         M->>M: check_timeout()
         Note right of M: Timeout detected
         M->>P: restart_process()
