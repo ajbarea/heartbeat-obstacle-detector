@@ -139,12 +139,12 @@ class HeartbeatMonitor:
 def main() -> None:  # pragma: no cover
     """Main entry point for standalone monitor usage.
 
-    Note: In the new architecture, the ProcessManager is the main orchestrator.
-    For full system orchestration, use the ProcessManager directly.
+    Runs a minimal monitoring setup for testing purposes.
+    Use process_manager.py for complete system orchestration.
     """
     logger.warning("Warning: Running HeartbeatMonitor in standalone mode.")
     logger.info(
-        "For full system orchestration, use 'python src/process_manager.py' instead."
+        "Use 'python src/process_manager.py' for complete system orchestration."
     )
 
     from process_manager import ProcessManager
