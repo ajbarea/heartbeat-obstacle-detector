@@ -22,23 +22,21 @@ A proof-of-concept implementation of the **Heartbeat** architectural tactic for 
 
 ## 📖 Overview
 
-This repository contains three Python modules implementing a fault-tolerant heartbeat monitoring system:
+This repository demonstrates the **Heartbeat** architectural tactic for fault detection and recovery in distributed systems. The implementation simulates a critical obstacle detection module in a self-driving car, showcasing how heartbeat monitoring can automatically detect process failures and recover within 500ms.
 
-1. **⚙️ process_manager.py**: **Main orchestrator** that coordinates the entire system and manages component lifecycle.
-2. **👁️ monitor.py**: **Monitoring service** that listens for heartbeat messages and detects timeouts.
-3. **🔍 detector.py**: **Worker process** that simulates obstacle detection and sends periodic heartbeat messages.
-
-The purpose is to demonstrate how the Heartbeat tactic can detect faults and recover a critical sensing process in a distributed system with proper architectural separation.
+The system uses UDP-based heartbeats with a 50ms interval to provide real-time fault detection suitable for safety-critical automotive applications.
 
 ---
 
 ## 🏗️ Architecture
 
-The system uses a **hierarchical orchestration pattern** with clear separation of concerns:
+The system implements a **hierarchical orchestration pattern** with three specialized components:
 
-- **⚙️ ProcessManager (Main Orchestrator)**: Coordinates the entire system, manages component lifecycle, and serves as the primary entry point.
-- **👁️ HeartbeatMonitor (Monitoring Service)**: Focuses on UDP heartbeat detection, timeout monitoring, and fault notification.
-- **🔍 ObstacleDetector (Worker Process)**: Performs obstacle detection simulation and sends periodic heartbeat signals.
+- **⚙️ ProcessManager**: Main orchestrator that manages system lifecycle and coordinates component interactions
+- **👁️ HeartbeatMonitor**: Dedicated monitoring service that detects UDP heartbeat timeouts and triggers recovery actions  
+- **🔍 ObstacleDetector**: Worker process that performs obstacle detection simulation while sending periodic heartbeat signals
+
+This design provides clear separation of concerns, prevents circular dependencies, and enables fault isolation where process crashes don't affect the monitoring system.
 
 For detailed architecture diagrams and technical documentation, see **[📋 Software Architecture Documentation](docs/software_architecture.md)**.
 

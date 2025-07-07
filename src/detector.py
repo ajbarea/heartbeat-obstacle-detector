@@ -107,12 +107,12 @@ class ObstacleDetector:
 def main() -> None:  # pragma: no cover
     """Main entry point for standalone detector usage.
 
-    Note: In the new architecture, the ProcessManager is the main orchestrator.
-    For full system orchestration, use the ProcessManager directly.
+    Runs the detector independently for testing purposes.
+    Use process_manager.py for complete system orchestration.
     """
     logger.info("Starting ObstacleDetector in standalone mode...")
     logger.info(
-        "For full system orchestration, use 'python src/process_manager.py' instead."
+        "Use 'python src/process_manager.py' for complete system orchestration."
     )
 
     detector = ObstacleDetector()
