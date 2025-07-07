@@ -98,7 +98,7 @@ classDiagram
 sequenceDiagram
     participant P as ProcessManager
     participant M as HeartbeatMonitor
-    participant W as ObstacleDetector
+    participant D as DetectorProcess
 
     Note over P,M: System Initialization
     activate P
@@ -108,49 +108,42 @@ sequenceDiagram
     P->>M: set process_manager reference
     P->>M: start_monitoring(["python", "detector.py"])
     M->>P: start_process(["python", "detector.py"])
-    P->>W: launch subprocess
-    activate W
-    W-->>P: process started
+    P->>D: launch subprocess
+    activate D
+    D-->>P: process started
     P-->>M: detector launched
     deactivate P
 
     loop Every 50 ms
-        activate W
-        W->>M: send_heartbeat()
-        deactivate W
-        Note right of M: record timestamp locally
+        D-->>M: send_heartbeat()
+        Note right of M: Record timestamp
     end
 
-    alt Crash
-        activate W
-        W->>W: simulate_failure()
-        deactivate W
-        Note right of W: no more heartbeats
+    alt Detector crash
+        Note right of D: Simulated crash (1% chance)<br>No more heartbeats
     end
 
-    alt Timeout (> 500 ms)
+    alt Timeout > 500ms
         M->>M: check_timeout()
-        Note right of M: timeout detected
+        Note right of M: Timeout detected
         M->>P: restart_process()
         activate P
-        P->>W: terminate old process
-        deactivate W
-        P->>W: launch new process
-        activate W
-        W-->>P: process started
+        P->>D: terminate old process
+        P->>D: launch new process
+        activate D
+        D-->>P: process started
         P-->>M: restarted successfully
         deactivate P
-        Note right of M: heartbeat tracking reset
+        Note right of M: Heartbeat tracking reset
     end
 
     alt System Shutdown
         activate P
         P->>P: shutdown_system()
-        P->>W: terminate process
-        deactivate W
+        P->>D: terminate process
         P->>M: close socket
+        Note right of P: System shutdown complete
         deactivate M
-        Note right of P: system shutdown complete
         deactivate P
     end
 ```
